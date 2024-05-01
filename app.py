@@ -1,3 +1,7 @@
+#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
+
+#https://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@github.com/kanb1/airbnb.git
+
 #########################
 from bottle import default_app, get, post, run
 import git
@@ -14,7 +18,7 @@ def git_update():
 ##############################
 @get("/")
 def _():
-  return "One"
+  return "Two"
  
 ##############################
 try:
