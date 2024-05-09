@@ -103,6 +103,26 @@ def do_signup():
     return "Signup successful! Pleasy verify your email"
 # Handle user verification
 
+############################## CHECK USERS IN DB
+@get('/users')
+def get_all_user_pks():
+    db = x.get_db_connection()
+    try:
+        db.row_factory = sqlite3.Row  # This allows access to data by column name
+        cur = db.cursor()
+        cur.execute('SELECT user_pk FROM users')  # Query to fetch only user_pk
+        user_pks = cur.fetchall()  # Fetch all results
+
+        # Convert results to a list of user_pk values
+        user_pk_list = [row['user_pk'] for row in user_pks]
+        response.content_type = 'application/json'
+        return {'user_pks': user_pk_list}
+
+    except Exception as e:
+        response.status = 500  # Internal Server Error
+        return {'error': str(e)}
+    finally:
+        db.close()
 
 
 ##############################
