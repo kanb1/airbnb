@@ -17,7 +17,7 @@ def dict_factory(cursor, row):
 
 ########################### DB connection
 def get_db_connection():
-    db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/airbnb.db")
+    db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/home/kanzaBokhari/airbnb/airbnb.db")
     # Enables column access by name
     db.row_factory = dict_factory
     return db
