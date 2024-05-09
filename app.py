@@ -122,7 +122,8 @@ def get_all_user_pks():
         response.status = 500  # Internal Server Error
         return {'error': str(e)}
     finally:
-        db.close()
+        if db:
+            db.close()
 
 
 ##############################
