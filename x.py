@@ -31,7 +31,6 @@ def get_db_connection():
         return db
     except Exception as e:
         print(f"Failed to connect to the database: {e}")
-        # Optionally re-raise the exception or handle it depending on your application needs
         raise
 
 ########################### TEST DB connection
