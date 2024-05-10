@@ -15,7 +15,7 @@ def dict_factory(cursor, row):
 
 # the dict_factory can be directly used in my sqlite connection setup have easy access to row data by column names
 
-########################### DB connection
+########################### DB connection - pa now
 def get_db_connection():
     db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/home/kanzaBokhari/airbnb/airbnb.db")
     # Enables column access by name
