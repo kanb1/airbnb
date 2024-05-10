@@ -16,22 +16,22 @@ def dict_factory(cursor, row):
 # the dict_factory can be directly used in my sqlite connection setup have easy access to row data by column names
 
 ########################### DB connection (locally)
-# def get_db_connection():
-#     db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/airbnb.db")
-#     # Enables column access by name
-#     db.row_factory = dict_factory
-#     return db
+def get_db_connection():
+    db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/airbnb.db")
+    # Enables column access by name
+    db.row_factory = dict_factory
+    return db
 
 ########################### DB connection (on PA)
-def get_db_connection():
-    try:
-        db_path = Path(__file__).parent.resolve() / "/home/kanzaBokhari/airbnb/airbnb.db"
-        db = sqlite3.connect(db_path)
-        db.row_factory = sqlite3.Row
-        return db
-    except Exception as e:
-        print(f"Failed to connect to the database: {e}")
-        raise
+# def get_db_connection():
+#     try:
+#         db_path = Path(__file__).parent.resolve() / "/home/kanzaBokhari/airbnb/airbnb.db"
+#         db = sqlite3.connect(db_path)
+#         db.row_factory = sqlite3.Row
+#         return db
+#     except Exception as e:
+#         print(f"Failed to connect to the database: {e}")
+#         raise
 
 ########################### TEST DB connection
 def create_tables():
