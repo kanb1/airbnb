@@ -65,6 +65,7 @@ def do_signup():
     user_password = request.forms.get('user_password')
     user_role = request.forms.get('user_role')
     current_timestamp = int(time.time())
+    # The verification token
     verification_key = uuid.uuid4().hex
     user_pk = str(uuid.uuid4())  # Create a UUID for the primary key
 
