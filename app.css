@@ -553,3 +553,17 @@ video {
   --tw-contain-paint:  ;
   --tw-contain-style:  ;
 }
+
+.bg-slate-400 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(148 163 184 / var(--tw-bg-opacity));
+}
+
+/* mixhtml */
+
+input{
+  border: black 2px solid;
+}
+.mix-error{
+  border: red 2px solid;
+}

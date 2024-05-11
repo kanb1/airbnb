@@ -1,15 +1,15 @@
-#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
-
-#https://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@github.com/kanb1/airbnb.git
-
-#########################
 from bottle import default_app, get, post, request, response, run, static_file, template, delete, put
+import smtplib
 import sqlite3
 import time
 import uuid
 import git
 import x
 import logging
+import os
+from icecream import ic
+
+
 
 # Set up basic configuration for logging
 logging.basicConfig(level=logging.DEBUG)
@@ -37,6 +37,11 @@ def _(file_name):
     return static_file(file_name+".js", ".")
 
 ##############################
+@get("/mixhtml.js")
+def _():
+    return static_file("mixhtml.js", ".")
+
+#############################
 @get("/")
 def _():
   return template("index.html")
@@ -59,65 +64,64 @@ def signup():
 ##############################
 @post("/signup")
 def do_signup():
-    print("Signup function called")
-    user_name = request.forms.get('user_name')
-    user_email = request.forms.get('user_email')
-    user_password = request.forms.get('user_password')
-    user_role = request.forms.get('user_role')
-    current_timestamp = int(time.time())
-    # The verification token
-    verification_key = uuid.uuid4().hex
-    user_pk = str(uuid.uuid4())  # Create a UUID for the primary key
-
-    db = None
     try:
+        user_username = request.forms.get('user_username').strip()
+        user_email = request.forms.get('user_email').strip()
+        user_password = request.forms.get('user_password').strip()
+        confirmed_password = request.forms.get('confirm_password').strip()
+        user_name = request.forms.get('user_name').strip()
+        user_last_name = request.forms.get('user_last_name').strip()
+        user_role = request.forms.get('user_role').strip()
+
+        validated_username = x.validate_user_user_name(user_username)
+        validated_email = x.validate_user_email(user_email)
+        validated_password = x.validate_user_password(user_password)
+        x.confirm_user_password(validated_password, confirmed_password)
+        validated_first_name = x.validate_user_name(user_name)
+        validated_last_name = x.validate_user_last_name(user_last_name)
+
+
+        user_role = request.forms.get('user_role')
+        current_timestamp = int(time.time())
+        verification_key = uuid.uuid4().hex
+        user_pk = str(uuid.uuid4())
+
         db = x.get_db_connection()
-        # SQL command
         sql = """
             INSERT INTO users (
-                user_pk, user_username, user_name, user_last_name, user_email, 
-                user_password, user_role, user_created_at, user_updated_at, 
+                user_pk, user_username, user_name, user_last_name, user_email,
+                user_password, user_role, user_created_at, user_updated_at,
                 user_is_verified, user_is_blocked, user_verification_key
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        # Parameters for the SQL command
-        params = (user_pk, user_name, user_name, "", user_email, user_password, user_role, current_timestamp, current_timestamp, 0, 0, verification_key)
+        params = (user_pk, validated_username, validated_first_name, validated_last_name, validated_email, validated_password, user_role, current_timestamp, current_timestamp, 0, 0, verification_key)
+        
 
-        # Print SQL and parameters for debugging
-        print("Executing SQL:", sql)
-        print("With parameters:", params)
-
-        # Execute the SQL command
         db.execute(sql, params)
         db.commit()
-        return "Signup successful! Please verify your email."
-    except sqlite3.IntegrityError as e:
-        print(f"Integrity Error: {e}")
-        return "User already exists"
-    except Exception as ex:
-        print(f"An error occurred during signup: {type(ex).__name__} - {ex}")
-        return "An error occurred during signup."
-    finally:
-        if db:
-            db.close()
-  
-    return "Signup successful! Pleasy verify your email"
-# Handle user verification
+        return "Signup successful! Please check your email to verify your account"
 
+    except sqlite3.IntegrityError as e:
+        print(f"Integrity Error. User already exists: {e}")
+    except Exception as ex:
+        ic(ex)
+    finally:
+        pass
+  
 ############################## CHECK USERS IN DB
 @get('/users')
-def get_all_user_pks():
+def get_all_user_username():
     db = x.get_db_connection()
     try:
         db.row_factory = sqlite3.Row  # This allows access to data by column name
         cur = db.cursor()
-        cur.execute('SELECT user_pk FROM users')  # Query to fetch only user_pk
+        cur.execute('SELECT user_username FROM users')  # Query to fetch only user_pk
         user_pks = cur.fetchall()  # Fetch all results
 
         # Convert results to a list of user_pk values
-        user_pk_list = [row['user_pk'] for row in user_pks]
+        user_pk_list = [row['user_username'] for row in user_pks]
         response.content_type = 'application/json'
-        return {'user_pks': user_pk_list}
+        return {'user_usernames': user_pk_list}
 
     except Exception as e:
         response.status = 500  # Internal Server Error
@@ -140,9 +144,13 @@ def login():
 
 
 ##############################
-try:
-  import production
-  application = default_app()
-except Exception as ex:
-  print("Running local server")
-  run(host="127.0.0.1", port=80, debug=True, reloader=True)
+
+
+# This is another way to do the 'Try/Except' clause for the production.py
+# This will look for the 'PYTHONANYWHERE_DOMAIN' in the environment variable in the os.
+# If it find it, it runs application = default_app()
+if 'PYTHONANYWHERE_DOMAIN' in os.environ:
+    application = default_app()
+else:
+    run(host="0.0.0.0", port=80, debug=True, reloader=True, interval=0)
+# If it doesn't find it, it runs this line which runs the server locally.

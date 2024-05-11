@@ -1,25 +1,40 @@
+
+% import x
 %include("_header")
 <main>
     <h1>Signup</h1>
-    <form action="/signup" method="post">
+    <form id="signupForm" action="/signup" method="post">
+        <label for="user_username">Username:</label><br>
+        <input type="text" id="user_username" name="user_username" mix-check="{{x.USER_USER_NAME_REGEX}}" placeholder="{{x.USER_USER_NAME_MIN}} to {{x.USER_USER_NAME_MAX}} characters"><br>
+
         <label for="user_name">Name:</label><br>
-        <input type="text" id="user_name" name="user_name" required><br>
+        <input type="text" id="user_name" name="user_name" mix-check="{{x.USER_NAME_REGEX}}" placeholder="{{x.USER_NAME_MIN}} to {{x.USER_NAME_MAX}} characters"><br>
+
+        <label for="user_last_name">Last name:</label><br>
+        <input type="text" id="user_last_name" name="user_last_name" mix-check="{{x.USER_LAST_NAME_REGEX}}" placeholder="{{x.USER_LAST_NAME_MIN}} to {{x.USER_LAST_NAME_MAX}} characters"><br>
 
         <label for="user_email">Email:</label><br>
-        <input type="email" id="user_email" name="user_email" required><br>
+        <input type="email" id="user_email" name="user_email" mix-check="{{x.EMAIL_REGEX}}" placeholder="Max {{x.EMAIL_MAX}} characteres"><br>
 
         <label for="user_password">Password:</label><br>
-        <input type="password" id="user_password" name="user_password" required><br>
+        <input type="password" id="user_password" name="user_password" mix-check="{{x.PASSWORD_REGEX}}" placeholder="{{x.PASSWORD_MIN}} to {{x.PASSWORD_MAX}} characters"><br>
+
+        <label for="confirm_password">Confirm Password:</label><br>
+        <input type="password" id="confirm_password" name="confirm_password"><br>
 
         <label for="user_role">Role:</label><br>
-        <select name="user_role" id="user_role" required>
+        <select name="user_role" id="user_role">
             <option value="">Select a role</option>
             <option value="partner">Partner</option>
             <option value="customer">Customer</option>
             <option value="admin">Admin</option>
         </select><br><br>
+        <!-- mix-post="/signup" to indicate that the form data should be submitted to /signup using a POST request. -->
+        <!--mix-data="#signupForm" tells mixhtml.js that the data for the POST request should be collected from the form identified by #signupForm. -->
+        <button class="bg-slate-400" mix-post="/signup" mix-data="#signupForm" mix-default="Sign Up" mix-await="Please wait...">
+            Sign Up
+        </button>
 
-        <input type="submit" value="Sign Up">
     </form>
 </main>
 %include("_footer")
