@@ -1,4 +1,5 @@
 from bottle import default_app, get, post, request, response, run, static_file, template, delete, put
+from bottle import redirect
 import smtplib
 import sqlite3
 import time
@@ -8,6 +9,11 @@ import x
 import logging
 import os
 from icecream import ic
+import bcrypt
+import json
+from bottle import json_dumps
+
+
 
 
 
@@ -44,7 +50,7 @@ def _():
 #############################
 @get("/")
 def _():
-  return template("index.html")
+    return template("index.html")
  
 ##############################TEST database connection
 @get("/test-db-connection")
@@ -64,6 +70,7 @@ def signup():
 ##############################
 @post("/signup")
 def do_signup():
+    db = None
     try:
         user_username = request.forms.get('user_username').strip()
         user_email = request.forms.get('user_email').strip()
@@ -73,6 +80,7 @@ def do_signup():
         user_last_name = request.forms.get('user_last_name').strip()
         user_role = request.forms.get('user_role').strip()
 
+        # Validate the inputs
         validated_username = x.validate_user_user_name(user_username)
         validated_email = x.validate_user_email(user_email)
         validated_password = x.validate_user_password(user_password)
@@ -80,8 +88,10 @@ def do_signup():
         validated_first_name = x.validate_user_name(user_name)
         validated_last_name = x.validate_user_last_name(user_last_name)
 
+        # Hash the password
+        hashed_password = bcrypt.hashpw(user_password.encode('utf-8'), bcrypt.gensalt())
 
-        user_role = request.forms.get('user_role')
+        # Setup for database entry
         current_timestamp = int(time.time())
         verification_key = uuid.uuid4().hex
         user_pk = str(uuid.uuid4())
@@ -94,19 +104,24 @@ def do_signup():
                 user_is_verified, user_is_blocked, user_verification_key
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        params = (user_pk, validated_username, validated_first_name, validated_last_name, validated_email, validated_password, user_role, current_timestamp, current_timestamp, 0, 0, verification_key)
-        
+        params = (user_pk, validated_username, validated_first_name, validated_last_name, validated_email, hashed_password, user_role, current_timestamp, current_timestamp, 0, 0, verification_key)
 
+        # Execute the SQL command
         db.execute(sql, params)
         db.commit()
-        return "Signup successful! Please check your email to verify your account"
+
+        # Send verification email
+        x.send_email(user_email, "your-email@example.com", "Verify your account", template('email_verification', key=verification_key))
+
+        return "Signup successful! Please check your email to verify your account."
 
     except sqlite3.IntegrityError as e:
-        print(f"Integrity Error. User already exists: {e}")
+        return f"Integrity Error. User already exists: {e}"
     except Exception as ex:
-        ic(ex)
+        return str(ex)
     finally:
-        pass
+        if db:
+            db.close()
   
 ############################## CHECK USERS IN DB
 @get('/users')
@@ -130,27 +145,157 @@ def get_all_user_username():
         if db:
             db.close()
 
+############################## get render templates, post oprette noget kreeres, lave nyt, put noget skal ændres, delete fjernes
+@get("/verify/<key>")
+def verify(key):
+    try:
+        # get_db_connection() returns a connection to the database
+        db = x.get_db_connection()
+        cursor = db.cursor()
 
-##############################
+        # Check if the key exists and get the user_pk
+        cursor.execute("SELECT user_pk FROM users WHERE user_verification_key = ?", (key,))
+        user = cursor.fetchone()
+
+        if user:
+            # Update the user_is_verified to 1 for the user with the given verification key
+            cursor.execute("UPDATE users SET user_is_verified = 1 WHERE user_verification_key = ?", (key,))
+            db.commit()
+            return f"Account with key {key} is verified successfully"
+        else:
+            return "Verification failed: Invalid key."
+
+    except Exception as ex:
+        print(ex)
+
+    finally:
+        if db:
+            db.close()
+
+############################## 
 @get("/login")
 def login():
-  return template("login.html")
+    return template("login.html")
+
+############################## 
+@post("/login")
+def _():
+    try:
+        email = request.forms.get('user_email')
+        password = request.forms.get('user_password')
+        ic(email, password)  # Debugging output
 
 
+        db = x.get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM users WHERE user_email = ?", (email,))
+        user = cursor.fetchone()
+        print(user)
 
-##############################
-# @post("/password-reset")
+        if user:
+            # No need to encode the stored hash
+            stored_hash = user['user_password']
+            ic(user)
 
+            # Only encode the password from the form
+            if bcrypt.checkpw(password.encode(), stored_hash):
+                ic("Password correct")  # Confirm password match
+                
+                # Remove the password from the user object, security cases
+                user.pop('user_password', None) # Using pop with None ensures no error if the key doesn't exist
+                # shows that user_password is not showing
+                ic(user)
 
+                if user['user_is_verified'] == 1:
+                    # Storing user ID & role in the cookie
 
-##############################
+                    # I create a session object that includes those user identifiers:
+                    session_data = {'user_id': user['user_pk'], 'role': user['user_role']}
+                    session_data_serialized = json.dumps(session_data)
+                    #then I later in the response.set_cookie send that session key with userdata to the client:
 
+                    try:
+                        import production
+                        is_cookie_https = True
+                    except ImportError:
+                        is_cookie_https = False
 
-# This is another way to do the 'Try/Except' clause for the production.py
-# This will look for the 'PYTHONANYWHERE_DOMAIN' in the environment variable in the os.
-# If it find it, it runs application = default_app()
-if 'PYTHONANYWHERE_DOMAIN' in os.environ:
-    application = default_app()
-else:
-    run(host="0.0.0.0", port=80, debug=True, reloader=True, interval=0)
-# If it doesn't find it, it runs this line which runs the server locally.
+                    # this is the data I want to store in my cookie, the session_data_serialized with the json userdata and my cookiekey, the "x.COOKIE_SECRET", is set as the cookie inside that response.set_cookie()
+                    # in devtools u see the encrypted cookie value, which is my COOKIE_SECRET. This function, specifically the secrey key, encrypts my cookie_secret.
+                    response.set_cookie("session", session_data_serialized, secret=x.COOKIE_SECRET, httponly=True, secure=is_cookie_https)
+                    ic("Session set, redirecting...")
+                    
+                    x.no_cache()
+
+                    return f"""
+                    <template mix-redirect="/{user['user_role']}-dashboard">
+                        </template>
+                    """
+                else:
+                    return "Please verify your account"
+            else:
+                return "Password invalid"
+        else:
+            return "User is not found"
+
+    except Exception as ex:
+        ic("Login error:", ex)
+        print(f"An error occurred: {str(ex)}")
+        print(f"Exception type: {type(ex).__name__}, Exception args: {ex.args}")
+        response.status = 500  # Set HTTP status to 500 to indicate server error
+        return "Problems logging in."
+        
+    finally:
+        if "db" in locals():
+            db.close()
+
+############################## CUSTOMER DASHBOARD
+@get("/customer-dashboard")
+def customer_dashboard():
+    x.no_cache()
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if user_session and json.loads(user_session).get('role') == 'customer':
+        return template('customer_dashboard.html')
+    else:
+        # også ift no_cache, så redirecter den til denne her side, da det er /customer-dashboard der bliver kaldt under login (og admin/partner hvis det er de)
+        return redirect("/login")
+
+############################## ADMIN DASHBOARD
+@get("/admin-dashboard")
+def admin_dashboard():
+    x.no_cache()
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if user_session and json.loads(user_session).get('role') == 'admin':
+        return template('admin_dashboard.html')
+    else:
+        return redirect("/login")
+
+############################## PARTNER DASHBOARD
+@get("/partner-dashboard")
+def partner_dashboard():
+    x.no_cache()
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if user_session and json.loads(user_session).get('role') == 'partner':
+        return template('partner_dashboard.html')
+    else:
+        return redirect("/login")
+
+############################## LOGOUT
+@get('/logout')
+def logout():
+    try:
+        response.delete_cookie("session")  # Delete the session cookie
+        x.no_cache()  # Set no-cache headers
+        
+        return f"""
+            <template mix-redirect="/login">
+            </template>
+        """
+    except Exception as ex:
+        print(ex)
+        return "Error logging out."
+    finally:
+        pass
+
+############################## skal ændres når deployer
+run(host="127.0.0.1", port=80, debug=True, reloader=True)

@@ -10,6 +10,25 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 import os
+# giv ny uuid hver gang
+COOKIE_SECRET = "97981c49-a651-4d36-9eb5-2b78e0c06c63"
+
+###################################### NO CACHE 
+def no_cache():
+    # sets the HTTP header to instruct the browser to not cache the content of the response
+
+    # This entire string is considered as the value for the Cache-Control header. The commas separate different directives that apply to caching mechanisms.
+    # no-cache directs the browser to revalidate with the server before serving the page from the cache
+    # no-store tells the browser not to store any version of the response, even in the private cache.
+    # must-revalidate tells the browser that it must revalidate with the server before serving this content after it has become stale.
+    response.add_header("Cache-control", "no-cache, no-store, must-revalidate")
+
+    # Pragma no-cache, This is an older header used for backward compatibility with HTTP/1.0 caches. Like Cache-Control: no-cache, it tells the browser to revalidate with the server before using a cached copy.
+
+    response.add_header("Pragma", "no-cache")
+    
+    # This header sets the expiration time of the content to a date/time in the past (typically, 0 represents January 1, 1970). This tells the browser that the content is already expired and should not be cached.
+    response.add_header("Expires", 0)
 
 ############################## dict_factory
 # Transforming query rows into dictionaries.
@@ -155,11 +174,71 @@ def confirm_user_password(user_password, confirm_password):
         raise Exception(400, error)
     return confirm_password
 
-
-
-
-
 ###################################### DEFINE EMAIL SENDING FUNCTION
+def send_email(to_email, from_email, subject, email_body):
 
-######################################
+    try:
+        # Email message setup:
+
+        # Creates a new multipart email message which can include both text and attachments
+        message = MIMEMultipart()
+        # Headers of the email = The respective parameters passed to the function
+        message["To"] = to_email
+        message["From"] = from_email
+        message["Subject"] = subject
+
+
+        # Email body:
+
+        # MIMETEXT can be added to the message, where here it's used to add the email_body as HTML content
+        messageText = MIMEText(email_body, 'html')
+        # we attach the MIMEText part to the multipart message
+        message.attach(messageText)
+
+
+        # Email server authentication info:
+        load_dotenv()
+        email = os.getenv('EMAIL_USER')
+        password = os.getenv('EMAIL_PASSWORD')
+
+
+        # Setup SMTP server:
+
+        # Sets up the connection to the SMTP server at the adress and port 
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        # sendt the EHLO command to the server, which is a greeting and can also help with initiating the TLS connection
+        server.ehlo('Gmail')
+        # puts the connection to the SMTP server into TLS mode, which encrupts the rest of the session
+        server.starttls()
+        # logs in to the SMTP server with the specified credentials
+        server.login(email, password)
+
+
+        # Send email:
+
+        # sends the email, message.as_stsirng() converts the MIME multipart message into a string format suitable for sending
+        server.sendmail(from_email, to_email, message.as_string())
+
+
+        # Close SMTP server connection:
+        server.quit()
+
+    except Exception as ex:
+        print(ex)
+        return "oops couldn't send email"
+    finally:
+        pass
+
+###################################### SESSION VALIDATION
+# This function checks if a user is logged in by validating the session cookie. It can throw an exception if the user is not logged in, which I can catch to handle unauthorized access.
+def validate_user_logged():
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if not user_session:
+        ic("No valid session found")  # Debug output
+        raise Exception("User must log in", 401)  # This should handle redirection or error management
+
+###################################### SESSION VALIDATION
+
+
+
 

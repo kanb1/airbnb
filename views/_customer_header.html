@@ -1,0 +1,22 @@
+%import x
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="/app.css">
+    <script src="/mixhtml.js" defer></script>
+</head>
+<body>
+    <main>
+        <nav>
+            <a href="/customer-all-properties">All Properties</a>
+            <a href="/customer-liked-properties">Liked Properties</a>
+            % if x.request.get_cookie("session", secret=x.COOKIE_SECRET):
+                <button mix-get="/logout" mix-redirect="/login">Logout</button>
+            % else:
+                <a href="/login">Login</a>
+            % end
+        </nav>
+    </main>
