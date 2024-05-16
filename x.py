@@ -167,12 +167,12 @@ def validate_user_password(user_password):
     return user_password
 
 # validate confirmed password
-def confirm_user_password(user_password, confirm_password):
-    confirm_password = request.forms.get("confirm_password", "").strip()
-    if user_password != confirm_password:
+def confirm_user_password(user_password, confirmed_password):
+    if user_password != confirmed_password:
         error = "Confirm password does not match the password"
         raise Exception(400, error)
-    return confirm_password
+    return confirmed_password
+
 
 ###################################### DEFINE EMAIL SENDING FUNCTION
 def send_email(to_email, from_email, subject, email_body):

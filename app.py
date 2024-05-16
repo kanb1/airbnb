@@ -7,6 +7,7 @@ import uuid
 import git
 import x
 import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 from icecream import ic
 import bcrypt
@@ -72,13 +73,21 @@ def signup():
 def do_signup():
     db = None
     try:
-        user_username = request.forms.get('user_username').strip()
-        user_email = request.forms.get('user_email').strip()
-        user_password = request.forms.get('user_password').strip()
-        confirmed_password = request.forms.get('confirm_password').strip()
-        user_name = request.forms.get('user_name').strip()
-        user_last_name = request.forms.get('user_last_name').strip()
-        user_role = request.forms.get('user_role').strip()
+        print(request.forms)
+        user_username = request.forms.get('user_username', '').strip()
+        user_email = request.forms.get('user_email', '').strip()
+        user_password = request.forms.get('user_password', '').strip()
+        confirmed_password = request.forms.get('confirmed_password', '').strip()
+        user_name = request.forms.get('user_name', '').strip()
+        user_last_name = request.forms.get('user_last_name', '').strip()
+        user_role = request.forms.get('user_role', '').strip()
+
+        print("Password:", user_password)
+        print("Confirmed Password:", confirmed_password)
+
+        if user_password != confirmed_password:
+            response.status = 400  # Set the status code to 400
+            return "Passwords do not match."  
 
         # Validate the inputs
         validated_username = x.validate_user_user_name(user_username)
@@ -116,9 +125,12 @@ def do_signup():
         return "Signup successful! Please check your email to verify your account."
 
     except sqlite3.IntegrityError as e:
-        return f"Integrity Error. User already exists: {e}"
+        response.status = 400
+        return f"Integrity Error. User already exists: {str(e)}"
     except Exception as ex:
-        return str(ex)
+        response.status = 500
+        logging.error(f"An error occurred: {ex}")
+        return "An internal server error occurred."
     finally:
         if db:
             db.close()
