@@ -309,5 +309,99 @@ def logout():
     finally:
         pass
 
+############################## GET FORGOT PASSWORD FORM
+@get('/forgot-password')
+def _():
+
+    try:
+        return f"""
+            <template mix-target="#loginForm" mix-replace>
+                <form action="/reset-password-request" method="post" id="resetForm">
+                    <div class="form-group">
+                        <label for="reset_email">Email:</label><br>
+                        <input type="email" id="reset_email" name="reset_email" required placeholder="Enter your email to reset password"><br><br>
+                    </div>
+                    <button type="submit" class="bg-slate-400" mix-post="/reset-password-request" mix-data="#resetForm" mix-default="Reset Password" mix-await="Sending reset link...">Send Reset Link
+                    </button>
+                </form>
+            </template>
+        """
+    except Exception as ex:
+        print(ex)
+        return "Can't get template"
+    finally:
+        pass
+
+
+############################## HANDLE PASSWORD RESET REQUEST
+@post('/reset-password-request')
+def handle_password_reset_request():
+    email = request.forms.get('reset_email')
+    db = x.get_db_connection()
+    cursor = db.cursor()
+    user = cursor.execute("SELECT user_pk, user_email FROM users WHERE user_email = ?", (email,)).fetchone()
+    
+    if user:
+        reset_token = str(uuid.uuid4())
+        cursor.execute("UPDATE users SET reset_token = ? WHERE user_email = ?", (reset_token, email))
+        db.commit()
+        
+        # reset_link = f"http://127.0.0.1/reset-password/{reset_token}"
+        # Proceed to send email with reset link
+        # email_body = f"Please click on the link to reset your password: {reset_link}"
+
+        # x.send_email(user_email, "kanzabokhari99@gmail.com", "Verify your account", template('email_verification', key=verification_key))
+
+        try:
+            # Calling the send_email function to send the reset link
+            x.send_email(user['user_email'], "your-email@example.com", "Reset your password", template('reset_password_email', reset_token=f"{reset_token}"))
+            return "A link to reset your password has been sent to your email."
+        except Exception as e:
+            print(f"Failed to send email: {e}")
+            return "Failed to send reset link email."
+        return "A link to reset your password has been sent to your email."
+    else:
+        return "No account associated with that email."
+
+
+
+############################## HANDLE PASSWORD RESET LINK
+@get('/reset-password/<token>')
+def show_reset_password_form(token):
+    return template('reset_password.html', token=token)
+
+
+############################## HANDLE THE PASSWORD UPDATE 
+@post('/reset-password/<token>')
+def process_reset_password(token):
+    try:
+        password = request.forms.get('new_password', '').strip()
+        confirmed_password = request.forms.get('confirm_password', '').strip()
+
+        if password != confirmed_password:
+            return "Passwords do not match.", 400
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        db = x.get_db_connection()
+        cursor = db.cursor()
+        cursor.execute("SELECT user_pk FROM users WHERE reset_token = ?", (token,))
+        user = cursor.fetchone()
+
+        if user:
+            # If the user exists and the token matches, update the password and clear the token
+            cursor.execute("UPDATE users SET user_password = ?, reset_token = NULL WHERE user_pk = ?", (hashed_password, user['user_pk']))
+            db.commit()
+            return "Your password has been successfully reset."
+        else:
+            return "Invalid or expired reset token.", 404
+    except Exception as ex:
+        return f"An error occurred: {str(ex)}", 500
+    finally:
+        db.close()
+
+
+
+
 ############################## skal ændres når deployer
 run(host="127.0.0.1", port=80, debug=True, reloader=True)

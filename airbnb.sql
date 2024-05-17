@@ -14,6 +14,7 @@ CREATE TABLE users(
     user_is_verified        INTEGER,
     user_is_blocked         INTEGER,
     user_verification_key   TEXT,
+    reset_token             TEXT,
     PRIMARY KEY(user_pk)
 ) WITHOUT ROWID;
 
