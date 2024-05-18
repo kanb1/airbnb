@@ -13,9 +13,7 @@ from icecream import ic
 import bcrypt
 import json
 from bottle import json_dumps
-
-
-
+import credentials
 
 
 # Set up basic configuration for logging
@@ -49,10 +47,98 @@ def _():
     return static_file("mixhtml.js", ".")
 
 #############################
+@get("/images/<item_splash_image>")
+def _(item_splash_image):
+    return static_file(item_splash_image, "images")
+
+#############################
 @get("/")
-def _():
-    return template("index.html")
- 
+def index():
+    conn = None
+    try:
+        conn = x.get_db_connection()
+        q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
+        items = q.fetchall()
+        items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
+        items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
+        
+        # Fetch the initial batch of items to display on the right side
+        initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT 0, ?", (x.ITEMS_PER_PAGE,)).fetchall()
+
+        return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token)
+    except Exception as ex:
+        ic(ex)
+        print(ex)
+    finally:
+        if conn:
+            conn.close()
+
+
+#############################
+
+@get("/")
+def index():
+    conn = None
+    try:
+        conn = x.get_db_connection()
+        q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
+        items = q.fetchall()
+        items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
+        items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
+        
+        # Fetch the initial batch of items to display on the right side
+        initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT 0, ?", (x.ITEMS_PER_PAGE,)).fetchall()
+
+        return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token)
+    except Exception as ex:
+        ic(ex)
+        print(ex)
+    finally:
+        if conn:
+            conn.close()
+
+#############################
+
+@get("/items/page/<page_number>")
+# the mix-function was on test before (from app.js) the test function is also responsible for adding markers when new items are fetched, and it might be causing the duplication. To fix this issue, you need to ensure that the test function also checks for duplicates before adding new markers. Additionally, it's crucial to integrate this with the main marker management logic, but I'm just letting it stay on app.js.
+def get_items_page(page_number):
+    try:
+        conn = x.get_db_connection()
+        offset = (int(page_number) - 1) * x.ITEMS_PER_PAGE
+        q = conn.execute("""
+            SELECT * FROM items 
+            ORDER BY item_created_at 
+            LIMIT ? OFFSET ?
+        """, (x.ITEMS_PER_PAGE, offset))
+        items = q.fetchall()
+
+        items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
+        items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
+
+        html = "".join([template("_item", item=item) for item in items])
+        btn_more = template("__btn_more", page_number=int(page_number) + 1) if len(items) == x.ITEMS_PER_PAGE else ""
+
+        return f"""
+        <template mix-target="#items" mix-bottom>
+            {html}
+        </template>
+        <template mix-target="#more" mix-replace>
+            {btn_more}
+        </template>
+        <template mix-function="addMarkers">{items_json}</template>
+        """
+    except Exception as ex:
+        ic(ex)
+        return "An error occurred while fetching more items."
+    finally:
+        if conn:
+            conn.close()
+
+
+
+
+
+
 ##############################TEST database connection
 @get("/test-db-connection")
 def test_db_connection_route():
@@ -368,40 +454,43 @@ def handle_password_reset_request():
 ############################## HANDLE PASSWORD RESET LINK
 @get('/reset-password/<token>')
 def show_reset_password_form(token):
-    return template('reset_password.html', token=token)
+    return template('__frm_reset_password.html', token=token)
 
 
 ############################## HANDLE THE PASSWORD UPDATE 
-@post('/reset-password/<token>')
+@put('/reset-password/<token>')
 def process_reset_password(token):
     try:
-        password = request.forms.get('new_password', '').strip()
+        # Fetch new password and confirmed password from the form
+        new_password = request.forms.get('new_password', '').strip()
         confirmed_password = request.forms.get('confirm_password', '').strip()
 
-        if password != confirmed_password:
-            return "Passwords do not match.", 400
+        # Validate new password
+        validated_new_password = x.validate_user_password(new_password)  # Validates format and length
+        x.confirm_user_password(validated_new_password, confirmed_password)  # Validates match
 
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        # If validation passes, hash the new password
+        hashed_password = bcrypt.hashpw(validated_new_password.encode('utf-8'), bcrypt.gensalt())
 
+        # Connect to the database and check the reset token
         db = x.get_db_connection()
         cursor = db.cursor()
         cursor.execute("SELECT user_pk FROM users WHERE reset_token = ?", (token,))
         user = cursor.fetchone()
 
         if user:
-            # If the user exists and the token matches, update the password and clear the token
+            # Update the user's password in the database and clear the reset token
             cursor.execute("UPDATE users SET user_password = ?, reset_token = NULL WHERE user_pk = ?", (hashed_password, user['user_pk']))
             db.commit()
             return "Your password has been successfully reset."
         else:
             return "Invalid or expired reset token.", 404
     except Exception as ex:
-        return f"An error occurred: {str(ex)}", 500
+        response.status = 500  # Properly setting the HTTP response code.
+        return str(ex)  # Ensuring the exception message is converted to string if it isn't already.
     finally:
-        db.close()
-
-
-
+        if "db" in locals(): 
+            db.close()
 
 ############################## skal ændres når deployer
 run(host="127.0.0.1", port=80, debug=True, reloader=True)

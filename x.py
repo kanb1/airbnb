@@ -10,8 +10,9 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 import os
-# giv ny uuid hver gang
+
 COOKIE_SECRET = "97981c49-a651-4d36-9eb5-2b78e0c06c63"
+ITEMS_PER_PAGE = 2
 
 ###################################### NO CACHE 
 def no_cache():

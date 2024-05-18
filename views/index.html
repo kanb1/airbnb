@@ -1,5 +1,52 @@
 %include("_header")
-<main>
-    <h1>Frontpage - All properties</h1>
+<main class="flex">
+    <div class="w-full h-full">
+        <div class="fixed w-[calc(50%-0.5rem)] h-[calc(100%-5rem)] bg-neutral-100">
+            <div id='map' class="w-full h-full"></div>
+            <script>
+                mapboxgl.accessToken = "{{mapbox_token}}";
+
+                // Convert items JSON to JavaScript object
+                var items = {{!items_json}};
+
+                var map = new mapboxgl.Map({
+                    container: 'map',
+                    style: 'mapbox://styles/mapbox/streets-v11',
+                    center: [12.5683, 55.6761],
+                    zoom: 12
+                });
+
+                // Function to add markers to the map
+                function addMarkers(items) {
+                    items.forEach(function(item) {
+                        var popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
+                            `<img src="/images/${item.item_splash_image}" style="width:100px;height:100px;"><br>
+                            <strong>${item.item_name}</strong><br>
+                            ${item.item_price_per_night} DKK per night`
+                        );
+
+                        new mapboxgl.Marker()
+                            .setLngLat([parseFloat(item.item_lon), parseFloat(item.item_lat)])
+                            .setPopup(popup)
+                            .addTo(map);
+                    });
+                }
+
+                // Add all markers initially
+                addMarkers(items);
+            </script>
+        </div>
+    </div>
+    <div class="w-full pb-16 px-4">
+        <div id="items" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-10">
+            % for item in items:
+                %include("_item")
+            % end
+        </div>
+        %include("__btn_more", page_number=2)
+    </div>
 </main>
 %include("_footer")
+
+
+
