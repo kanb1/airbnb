@@ -314,7 +314,6 @@ def _():
         password = request.forms.get('user_password')
         ic(email, password)  # Debugging output
 
-
         db = x.get_db_connection()
         cursor = db.cursor()
         cursor.execute("SELECT * FROM users WHERE user_email = ?", (email,))
@@ -322,6 +321,10 @@ def _():
         print(user)
 
         if user:
+            # Check if the account is marked as deleted
+            if user['user_is_deleted'] == 1:
+                return "This account has been deleted."
+
             # No need to encode the stored hash
             stored_hash = user['user_password']
             ic(user)
@@ -377,6 +380,7 @@ def _():
     finally:
         if "db" in locals():
             db.close()
+
 
 ############################## CUSTOMER DASHBOARD
 @get("/customer-dashboard")

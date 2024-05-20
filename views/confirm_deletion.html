@@ -1,0 +1,13 @@
+% include("_header.html")
+<main class="flex flex-col items-center justify-center h-screen">
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <strong class="font-bold">Account Deleted!</strong>
+        <span class="block sm:inline">Your account has been successfully deleted. You will be redirected to the login page shortly.</span>
+    </div>
+</main>
+<script>
+    setTimeout(function(){
+        window.location.href = "/login";
+    }, 3000); // Redirect after 3 seconds
+</script>
+% include("_footer.html")

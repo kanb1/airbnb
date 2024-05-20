@@ -107,5 +107,154 @@ def toggle_book():
         if conn:
             conn.close()
 
-############################# EDIT PROFILE
-############################# DELETE PROFILE
+############################# EDIT PROFILE FOR CUSTOMERS - DISPLAY PROFILE
+@get("/profile")
+def _():
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if not user_session:
+        redirect("/login")
+
+    user = json.loads(user_session)
+    user_id = user['user_id']
+    
+    conn = x.get_db_connection()
+    try:
+        user_data = conn.execute("SELECT * FROM users WHERE user_pk = ?", (user_id,)).fetchone()
+        return template("profile.html", user=user_data)
+    except Exception as ex:
+        return str(ex)
+    finally:
+        if conn:
+            conn.close()
+
+############################# EDIT PROFILE FOR CUSTOMERS - EDIT PROFILE
+@put("/profile/edit")
+def edit_profile():
+    try:
+        user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+        if not user_session:
+            ic("No user session found")
+            return redirect("/login")
+
+        user = json.loads(user_session)
+        user_id = user['user_id']
+        
+        user_name = request.forms.get("user_name").strip()
+        user_last_name = request.forms.get("user_last_name").strip()
+        user_email = request.forms.get("user_email").strip()
+
+        ic(user_id, user_name, user_last_name, user_email)
+
+        # Validate new inputs
+        validated_new_name = x.validate_user_name(user_name)
+        validated_new_last_name = x.validate_user_last_name(user_last_name)
+        validated_new_email = x.validate_user_email(user_email)
+        
+        ic(validated_new_name, validated_new_last_name, validated_new_email)
+
+        db = x.get_db_connection()
+        cursor = db.cursor()
+
+        cursor.execute("""
+            UPDATE users
+            SET user_name = ?, user_last_name = ?, user_email = ?
+            WHERE user_pk = ?
+        """, (validated_new_name, validated_new_last_name, validated_new_email, user_id))
+
+        ic("Executed update query")
+
+        db.commit()
+        ic("Committed changes")
+
+        return f"""
+        <template mix-redirect="/profile">
+        </template>
+        """
+
+    except Exception as ex:
+        ic(ex)
+        return str(ex)
+    finally:
+        if "db" in locals():
+            db.close()
+            ic("Closed database connection")
+
+
+
+############################# SOFT DELETE CUSTOMER PROFILE
+@post("/profile/delete")
+def delete_profile():
+    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+    if not user_session:
+        redirect("/login")
+
+    user = json.loads(user_session)
+    user_id = user['user_id']
+    password = request.forms.get("password").strip()
+    
+    conn = x.get_db_connection()
+    try:
+        user_data = conn.execute("SELECT * FROM users WHERE user_pk = ?", (user_id,)).fetchone()
+        if not bcrypt.checkpw(password.encode(), user_data['user_password']):
+            return f"""
+            <template mix-target="#delete_profile_message" mix-replace>
+                <p>Invalid password</p>
+            </template>
+            """
+        
+        deletion_verification_key = str(uuid.uuid4())
+        conn.execute("UPDATE users SET user_deletion_verification_key = ? WHERE user_pk = ?", (deletion_verification_key, user_id))
+        conn.commit()
+        
+        # Send email with verification key
+        x.send_email(user_data['user_email'], "your-email@example.com", "Confirm Account Deletion", 
+                     template('email_confirm_deletion.html', key=deletion_verification_key))
+        
+        return f"""
+        <template mix-target="#delete_profile_message" mix-replace>
+            <p>A confirmation email has been sent to your email address.</p>
+        </template>
+        """
+    except Exception as ex:
+        return str(ex)
+    finally:
+        if conn:
+            conn.close()
+
+############################## HANDLE THE CONFIRMATION LINK
+@get("/profile/confirm-delete/<key>")
+def confirm_delete_profile(key):
+    ic("Entering confirm_delete_profile with key:", key)
+    conn = x.get_db_connection()
+    try:
+        user_data = conn.execute("SELECT * FROM users WHERE user_deletion_verification_key = ?", (key,)).fetchone()
+        ic("User data fetched:", user_data)
+        if not user_data:
+            ic("Invalid verification key")
+            return """
+            <template mix-target="body" mix-replace>
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <strong class="font-bold">Error!</strong>
+                    <span class="block sm:inline">Invalid verification key.</span>
+                </div>
+            </template>
+            """
+        
+        # Update the user's account to set user_is_deleted to 1
+        conn.execute("UPDATE users SET user_is_deleted = 1 WHERE user_pk = ?", (user_data['user_pk'],))
+        conn.commit()
+        
+        # Log the user out by deleting the session cookie
+        response.delete_cookie("session")
+        x.no_cache()  # Set no-cache headers
+        
+
+        # Render the account deleted message and include the mix-redirect template
+        return template("confirm_deletion.html")
+
+    except Exception as ex:
+        ic(ex)
+        return str(ex)
+    finally:
+        if conn:
+            conn.close()

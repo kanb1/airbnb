@@ -256,3 +256,10 @@ function mix_convert(){
 
 
 mix_convert();
+
+// ##############################
+function redirectAfterTimeout(url){
+    setTimeout(function(){
+        window.location.href = url;
+    }, 3000); // Redirect after 3 seconds
+}
