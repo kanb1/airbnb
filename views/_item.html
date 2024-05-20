@@ -23,14 +23,28 @@
             nat
         </span>
     </div>
+    % if x.validate_customer_logged():
         <div>
-            <form id="{{item["item_pk"]}}">
-                <input name="item_id" type="hidden" value="{{item["item_pk"]}}">
-                %if x.validate_customer_logged():
-                    <button>Book</button>
-                %end
-
+            <form id="frm_book_{{item['item_pk']}}">
+                <input name="item_id" type="hidden" value="{{item['item_pk']}}">
+                % if item['booked']:
+                    <button class="book-button"
+                            mix-data="#frm_book_{{item['item_pk']}}"
+                            mix-post="/toggle_book"
+                            mix-default="Unbook"
+                            mix-await="Unbooking...">
+                        Unbook
+                    </button>
+                % else:
+                    <button class="book-button"
+                            mix-data="#frm_book_{{item['item_pk']}}"
+                            mix-post="/toggle_book"
+                            mix-default="Book"
+                            mix-await="Booking...">
+                        Book
+                    </button>
+                % end
             </form>
-
         </div>
+    % end
 </div>

@@ -21,6 +21,11 @@ CREATE TABLE users(
 SELECT * FROM users;
 -- DELETE FROM users WHERE user_pk = "6f5acc09-2136-44d7-b7d9-adb229071df1" OR user_pk = "26d25c65-83bb-49b1-b415-d0a42c71b7bb" OR user_pk = "251ee0fe-3c25-4427-9927-79ab01c74f19" OR user_pk = "1f56ce48-3e15-4540-9bb3-e65092cb2265" OR user_pk = "082629e1-eecf-4b33-b10a-0a76071d5954";
 
+
+
+
+
+
 --------------------------------------------- ITEMS
 DROP TABLE IF EXISTS items;
 
@@ -51,3 +56,21 @@ INSERT INTO items VALUES
 ("62f2ec02b59043ac9492087feb9dfb6110", "Vejl", "8c6b03c866d641ff8096f840bbfe68a10.webp", "55.676098", "12.568323", 2.0, 2344, 10, 0, "c403b9ce-d363-47c2-aeff-0715f1dceeb1");
 
 SELECT * FROM items ORDER BY item_created_at DESC;
+
+
+
+
+
+--------------------------------------------- BOOKINGS
+
+DROP TABLE IF EXISTS bookings;
+CREATE TABLE bookings(
+    booking_pk      TEXT,,
+    user_id         TEXT,
+    item_id         TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(user_pk),
+    FOREIGN KEY(item_id) REFERENCES items(item_pk)
+    PRIMARY KEY(booking_pk)
+)WITHOUT ROWID;
+
+SELECT * FROM bookings;

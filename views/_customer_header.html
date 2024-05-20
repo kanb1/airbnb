@@ -11,7 +11,7 @@
 <body>
     <main>
         <nav>
-            <!-- THIS FILE SHOULD BE DELETED, I MADE THE _HEADER CONDITIONAL -->
+            <!-- THIS FILE SHOULD BE DELETED, I MADE THE _HEADER TEMPLATE CONDITIONA WITH SESSION VALIDATION INSTEAD -->
             <a href="/customer-all-properties">All Properties</a>
             <a href="/customer-liked-properties">Liked Properties</a>
             % if x.request.get_cookie("session", secret=x.COOKIE_SECRET):
