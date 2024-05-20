@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
 import os
+import json
 
 COOKIE_SECRET = "97981c49-a651-4d36-9eb5-2b78e0c06c63"
 ITEMS_PER_PAGE = 2
@@ -238,8 +239,49 @@ def validate_user_logged():
         ic("No valid session found")  # Debug output
         raise Exception("User must log in", 401)  # This should handle redirection or error management
 
-###################################### SESSION VALIDATION
 
+###################################### SESSION VALIDATIONS FOR ROLES, USEFUL FOR ROLE ACCESS - CUSTOMER 
 
+def validate_customer_logged():
+    user_session = request.get_cookie("session", secret=COOKIE_SECRET)
+    if not user_session:
+        print("No valid session found")  # Debug output
+        return False
+    try:
+        user = json.loads(user_session)
+        print("Session data found:", user)  # Debug output
+        return user.get('role') == 'customer'
+    except json.JSONDecodeError as e:
+        print(f"Error decoding session data: {e}")
+        return False
 
+###################################### SESSION VALIDATION FOR ROLES - PARTNER 
+
+def validate_partner_logged():
+    user_session = request.get_cookie("session", secret=COOKIE_SECRET)
+    if not user_session:
+        print("No valid session found")  # Debug output
+        return False
+    try:
+        user = json.loads(user_session)
+        print("Session data found:", user)  # Debug output
+        return user.get('role') == 'partner'
+    except json.JSONDecodeError as e:
+        print(f"Error decoding session data: {e}")
+        return False
+
+###################################### SESSION VALIDATION FOR ROLES - ADMIN 
+
+def validate_admin_logged():
+    user_session = request.get_cookie("session", secret=COOKIE_SECRET)
+    if not user_session:
+        print("No valid session found")  # Debug output
+        return False
+    try:
+        user = json.loads(user_session)
+        print("Session data found:", user)  # Debug output
+        return user.get('role') == 'admin'
+    except json.JSONDecodeError as e:
+        print(f"Error decoding session data: {e}")
+        return False
 

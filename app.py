@@ -52,26 +52,37 @@ def _(item_splash_image):
     return static_file(item_splash_image, "images")
 
 #############################
-@get("/")
-def index():
-    conn = None
-    try:
-        conn = x.get_db_connection()
-        q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
-        items = q.fetchall()
-        items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
-        items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
-        
-        # Fetch the initial batch of items to display on the right side
-        initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT 0, ?", (x.ITEMS_PER_PAGE,)).fetchall()
+# @get('/')
+# def _():
+#     print("Entering the index route")
+#     conn = None
+#     try:
+#         conn = x.get_db_connection()
+#         print("Database connection established")
+#         q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
+#         items = q.fetchall()
+#         items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
+#         items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
 
-        return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token)
-    except Exception as ex:
-        ic(ex)
-        print(ex)
-    finally:
-        if conn:
-            conn.close()
+#         # Fetch the initial batch of items to display on the right side
+#         initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT ?", (x.ITEMS_PER_PAGE,)).fetchall()
+#         print("Fetched initial items")
+#         is_logged = False
+
+#         try:
+#             is_logged = x.validate_user_logged()
+#             is_logged = True  # Set is_logged to True if the user is validated
+#             print("User validated:", user)
+#         except Exception as ex:
+#             print("User not logged in as customer")
+
+#         return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token, is_logged=is_logged)
+#     except Exception as ex:
+#         print("Error in index route:", ex)
+#     finally:
+#         if conn:
+#             conn.close()
+#             print("Database connection closed")
 
 
 #############################
@@ -83,10 +94,9 @@ def index():
         conn = x.get_db_connection()
         q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
         items = q.fetchall()
-        items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
-        items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
+        items_dict = [dict(item) for item in items] 
+        items_json = json.dumps(items_dict)  
         
-        # Fetch the initial batch of items to display on the right side
         initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT 0, ?", (x.ITEMS_PER_PAGE,)).fetchall()
 
         return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token)

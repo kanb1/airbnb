@@ -1,3 +1,4 @@
+% import x
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,23 +7,31 @@
     <title>Document</title>
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
-
     <link rel="stylesheet" href="/app.css">
     <script src="/mixhtml.js" defer></script>
     <script src="/app.js" defer></script>
-
 </head>
 <body>
     <main>
         <nav>
             <a href="/">
-                <button>All properties</button>
+                <button>All Properties</button>
             </a>
-            <a href="/signup">
-                <button>Sign Up</button>
-            </a>
-            <a href="/login">
-                <button>Log In</button>
-            </a>
+            %if x.validate_customer_logged():
+                <a href="/customer-liked-properties">
+                    <button>My Bookings</button>
+                </a>
+
+                <button mix-get="/logout" mix-redirect="/login">Logout</button>
+            %else:
+                <a href="/signup">
+                    <button>Sign Up</button>
+                </a>
+                <a href="/login">
+                    <button>Log In</button>
+                </a>
+            %end
         </nav>
     </main>
+</body>
+</html>
