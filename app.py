@@ -417,18 +417,12 @@ def partner_dashboard():
 @get('/logout')
 def logout():
     try:
-        response.delete_cookie("session")  # Delete the session cookie
-        x.no_cache()  # Set no-cache headers
-        
-        return f"""
-            <template mix-redirect="/login">
-            </template>
-        """
+        response.delete_cookie("session", secret=x.COOKIE_SECRET)  # Delete the session cookie
     except Exception as ex:
         print(ex)
         return "Error logging out."
     finally:
-        pass
+        redirect("/")
 
 ############################## GET FORGOT PASSWORD FORM
 @get('/forgot-password')

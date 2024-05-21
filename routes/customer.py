@@ -244,17 +244,11 @@ def confirm_delete_profile(key):
         conn.execute("UPDATE users SET user_is_deleted = 1 WHERE user_pk = ?", (user_data['user_pk'],))
         conn.commit()
         
-        # Log the user out by deleting the session cookie
-        response.delete_cookie("session")
-        x.no_cache()  # Set no-cache headers
-        
-
-        # Render the account deleted message and include the mix-redirect template
-        return template("confirm_deletion.html")
-
     except Exception as ex:
         ic(ex)
         return str(ex)
     finally:
+        # Render the account deleted message and include the mix-redirect template
+        redirect("/logout")
         if conn:
             conn.close()
