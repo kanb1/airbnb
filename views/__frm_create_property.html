@@ -1,0 +1,29 @@
+% import x
+<main class="flex flex-col items-center justify-center h-screen">
+    <div class="w-full max-w-md bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h1 class="mb-4 text-xl font-bold">Add Property</h1>
+        <form id="frm_create_property" class="flex flex-col gap-4">
+            <div>
+                <label for="item_name">Name</label>
+                <input name="item_name" id="item_name" class="w-full border" type="text" placeholder="Name" value="" mix-check="{{x.ITEM_NAME_REGEX}}" required>
+            </div>
+            <div>
+                <label for="item_price_per_night">Price per Night</label>
+                <input name="item_price_per_night" id="item_price_per_night" class="w-full border" type="number" placeholder="Price per Night" value="" required>
+            </div>
+            <div>
+                <label for="item_images">Images (at least 3):</label>
+                <div id="file_container">
+                    <input name="item_images" id="item_images" class="w-full border" type="file" accept=".png, .jpg, .jpeg, .webp" multiple required max="5" min="1">
+                </div>
+            </div>
+            <button type="button" class="bg-blue-500 text-white p-2"
+                    mix-post="/create_property"
+                    mix-data="#frm_create_property"
+                    mix-default="Add Property"
+                    mix-await="Please wait ...">
+                Add Property
+            </button>
+        </form>
+    </div>
+</main>

@@ -285,3 +285,70 @@ def validate_admin_logged():
         print(f"Error decoding session data: {e}")
         return False
 
+###################################### VALIDATE NEWLY CREATED ITEMS
+ITEM_NAME_REGEX = r'^[a-zA-Z0-9 ]{3,50}$'
+ITEM_PRICE_REGEX = r'^\d+(\.\d{1,2})?$'
+
+def validate_item_name(item_name):
+    if not item_name or len(item_name) < 3:
+        raise ValueError("Invalid item name")
+    return item_name
+
+
+def validate_item_price(item_price):
+    try:
+        price = float(item_price)
+        if price <= 0:
+            raise ValueError("Price must be positive")
+        return price
+    except ValueError:
+        raise ValueError("Invalid price format")
+
+
+def validate_item_images(current_images, new_images = []):
+    total_images = current_images + [img.filename for img in new_images]
+    if len(total_images) < 3 or len(total_images) > 6:
+        raise ValueError("You should have at least 3 images and a maximum of 6 images.")
+    for image in new_images:
+        if not image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+            raise ValueError("Invalid image format")
+    return total_images
+
+
+###################################### GET CURRENT USER_ID from the session (for partner properties)
+# Function to get the current user ID from the session
+def get_current_user_id():
+    user_session = request.get_cookie("session", secret=COOKIE_SECRET)
+    if not user_session:
+        return None
+    try:
+        user = json.loads(user_session)
+        return user.get('user_id')
+    except json.JSONDecodeError as e:
+        ic(f"Error decoding session data: {e}")
+        return None
+
+
+
+###################################### GROUP THE IMAGES
+# This function will group the images for each item and return a list of items where each item has a list of its associated images
+def group_images(rows):
+    items = {}
+    for row in rows:
+        item_pk = row['item_pk']
+        if item_pk not in items:
+            items[item_pk] = {
+                'item_pk': item_pk,
+                'item_name': row['item_name'],
+                'item_stars': row['item_stars'],
+                'item_price_per_night': row['item_price_per_night'],
+                'item_images': []
+            }
+        items[item_pk]['item_images'].append(row['image_url'])
+    return list(items.values())
+
+
+
+
+
+

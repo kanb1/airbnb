@@ -9,3 +9,14 @@ function test(items){
         .addTo(map);        
     })
 }
+
+
+    function showNextImage(itemPk) {
+        const imageElement = document.getElementById(`image-${itemPk}`);
+        const images = JSON.parse(imageElement.dataset.images);
+        let currentIndex = parseInt(imageElement.dataset.index, 10);
+
+        currentIndex = (currentIndex + 1) % images.length;
+        imageElement.src = `/images/${images[currentIndex]}`;
+        imageElement.dataset.index = currentIndex;
+    }

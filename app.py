@@ -17,6 +17,7 @@ import credentials
 
 # Routes for the roles
 import routes.customer
+import routes.partner
 
 
 
@@ -56,40 +57,6 @@ def _(item_splash_image):
     return static_file(item_splash_image, "images")
 
 #############################
-# @get('/')
-# def _():
-#     print("Entering the index route")
-#     conn = None
-#     try:
-#         conn = x.get_db_connection()
-#         print("Database connection established")
-#         q = conn.execute("SELECT * FROM items ORDER BY item_created_at")
-#         items = q.fetchall()
-#         items_dict = [dict(item) for item in items]  # Convert each row to a dictionary
-#         items_json = json.dumps(items_dict)  # Convert the list of dictionaries to JSON
-
-#         # Fetch the initial batch of items to display on the right side
-#         initial_items = conn.execute("SELECT * FROM items ORDER BY item_created_at LIMIT ?", (x.ITEMS_PER_PAGE,)).fetchall()
-#         print("Fetched initial items")
-#         is_logged = False
-
-#         try:
-#             is_logged = x.validate_user_logged()
-#             is_logged = True  # Set is_logged to True if the user is validated
-#             print("User validated:", user)
-#         except Exception as ex:
-#             print("User not logged in as customer")
-
-#         return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token, is_logged=is_logged)
-#     except Exception as ex:
-#         print("Error in index route:", ex)
-#     finally:
-#         if conn:
-#             conn.close()
-#             print("Database connection closed")
-
-
-#############################
 @get("/")
 def index():
     conn = None
@@ -102,22 +69,25 @@ def index():
             user = json.loads(user_session)
             user_id = user['user_id']
 
-        # Modify the query to include the booked status
         query = """
-        SELECT items.*, 
-               CASE WHEN bookings.item_id IS NOT NULL THEN 1 ELSE 0 END AS booked
+        SELECT items.*, GROUP_CONCAT(items_images.image_url) as item_images
         FROM items
-        LEFT JOIN bookings ON items.item_pk = bookings.item_id AND bookings.user_id = ?
-        ORDER BY items.item_created_at
+        LEFT JOIN items_images ON items.item_pk = items_images.item_fk
+        GROUP BY items.item_pk
+        ORDER BY items.item_created_at DESC
         """
-        items = conn.execute(query, (user_id,)).fetchall()
+        
+        items = conn.execute(query).fetchall()
         items_dict = [dict(item) for item in items]
+        for item in items_dict:
+            if item['item_images']:
+                item['item_images'] = item['item_images'].split(',')
+
         items_json = json.dumps(items_dict)
 
-        # Fetch the initial batch of items to display on the right side
-        initial_items = conn.execute(query + " LIMIT ?", (user_id, x.ITEMS_PER_PAGE)).fetchall()
+        initial_items = items_dict[:x.ITEMS_PER_PAGE]
 
-        return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token)
+        return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token, json=json)
     except Exception as ex:
         ic(ex)
         print(ex)
@@ -130,27 +100,25 @@ def index():
 @get("/items/page/<page_number>")
 def get_items_page(page_number):
     try:
-        user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
-        user_id = None
-        if user_session:
-            user = json.loads(user_session)
-            user_id = user['user_id']
-
         conn = x.get_db_connection()
         offset = (int(page_number) - 1) * x.ITEMS_PER_PAGE
         query = """
-        SELECT items.*, 
-               CASE WHEN bookings.item_id IS NOT NULL THEN 1 ELSE 0 END AS booked
+        SELECT items.*, GROUP_CONCAT(items_images.image_url) as item_images
         FROM items
-        LEFT JOIN bookings ON items.item_pk = bookings.item_id AND bookings.user_id = ?
-        ORDER BY items.item_created_at 
+        LEFT JOIN items_images ON items.item_pk = items_images.item_fk
+        GROUP BY items.item_pk
+        ORDER BY items.item_created_at DESC
         LIMIT ? OFFSET ?
         """
-        items = conn.execute(query, (user_id, x.ITEMS_PER_PAGE, offset)).fetchall()
+        items = conn.execute(query, (x.ITEMS_PER_PAGE, offset)).fetchall()
         items_dict = [dict(item) for item in items]
+        for item in items_dict:
+            if item['item_images']:
+                item['item_images'] = item['item_images'].split(',')
+
         items_json = json.dumps(items_dict)
 
-        html = "".join([template("_item", item=item) for item in items])
+        html = "".join([template("_item", item=item) for item in items_dict])
         btn_more = template("__btn_more", page_number=int(page_number) + 1) if len(items) == x.ITEMS_PER_PAGE else ""
 
         return f"""
@@ -168,6 +136,7 @@ def get_items_page(page_number):
     finally:
         if conn:
             conn.close()
+
 
 
 ##############################TEST database connection
@@ -422,7 +391,7 @@ def logout():
         print(ex)
         return "Error logging out."
     finally:
-        redirect("/")
+        return redirect("/")
 
 ############################## GET FORGOT PASSWORD FORM
 @get('/forgot-password')

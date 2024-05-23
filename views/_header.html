@@ -7,9 +7,14 @@
     <title>Document</title>
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css' rel='stylesheet' />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
     <link rel="stylesheet" href="/app.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
     <script src="/mixhtml.js" defer></script>
     <script src="/app.js" defer></script>
+    <script src="/carousel.js" defer></script>
 </head>
 <body>
     <main>
@@ -24,7 +29,18 @@
                 <a href="/profile">
                     <button>My Profile</button>
                 </a>
-                <button mix-get="/logout" mix-redirect="/login">Logout</button>
+                <a href="/logout">Logout</a>
+            %elif x.validate_partner_logged():
+                <a href="/add-property">
+                    <button>Add Property</button>
+                </a>
+                <a href="/my-properties">
+                    <button>My Properties</button>
+                </a>
+                <a href="/profile">
+                    <button>My Profile</button>
+                </a>
+                <a href="/logout">Logout</a>
             %else:
                 <a href="/signup">
                     <button>Sign Up</button>
