@@ -328,8 +328,6 @@ def get_current_user_id():
         ic(f"Error decoding session data: {e}")
         return None
 
-
-
 ###################################### GROUP THE IMAGES
 # This function will group the images for each item and return a list of items where each item has a list of its associated images
 def group_images(rows):
@@ -346,6 +344,28 @@ def group_images(rows):
             }
         items[item_pk]['item_images'].append(row['image_url'])
     return list(items.values())
+
+###################################### VALIDATION FUNCTIONS TO CHECK IF THE USER/PROPERTY IS BLOCKED
+#VALIDATE IF USER IS BLOCKED
+def validate_user_is_not_blocked(user_id):
+    conn = get_db_connection()
+    try:
+        user_status = conn.execute("SELECT user_is_blocked FROM users WHERE user_pk = ?", (user_id,)).fetchone()
+        if user_status and user_status['user_is_blocked'] == 1:
+            raise Exception("User is blocked")
+    finally:
+        conn.close()
+
+#VALIDATE IF PROPERTY IS BLOCKED
+def validate_item_is_not_blocked(item_id):
+    conn = get_db_connection()
+    try:
+        item_status = conn.execute("SELECT item_is_blocked FROM items WHERE item_pk = ?", (item_id,)).fetchone()
+        if item_status and item_status['item_is_blocked'] == 1:
+            raise Exception("Item is blocked")
+    finally:
+        conn.close()
+
 
 
 

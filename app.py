@@ -295,6 +295,13 @@ def _():
             if user['user_is_deleted'] == 1:
                 return "This account has been deleted."
 
+            # Check if the account is blocked
+            try:
+                x.validate_user_is_not_blocked(user['user_pk'])
+            except Exception as ex:
+                ic(ex)
+                return "Your account is blocked by the admin"
+
             # No need to encode the stored hash
             stored_hash = user['user_password']
             ic(user)
