@@ -18,6 +18,7 @@ import credentials
 # Routes for the roles
 import routes.customer
 import routes.partner
+import routes.admin
 
 
 
@@ -363,14 +364,14 @@ def customer_dashboard():
         return redirect("/login")
 
 ############################## ADMIN DASHBOARD
-@get("/admin-dashboard")
-def admin_dashboard():
-    x.no_cache()
-    user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
-    if user_session and json.loads(user_session).get('role') == 'admin':
-        return template('admin_dashboard.html')
-    else:
-        return redirect("/login")
+# @get("/admin-dashboard")
+# def admin_dashboard():
+#     x.no_cache()
+#     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
+#     if user_session and json.loads(user_session).get('role') == 'admin':
+#         return template('admin_dashboard.html')
+#     else:
+#         return redirect("/login")
 
 ############################## PARTNER DASHBOARD
 @get("/partner-dashboard")

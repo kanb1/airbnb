@@ -116,25 +116,25 @@ def create_property():
 
             
 ############################# GET MY PROPERTIES PAGE
-@get("/my-properties")
-def my_properties():
-    conn = None
-    try:
-        if not x.validate_partner_logged():
-            return redirect("/login")
+# @get("/my-properties")
+# def my_properties():
+#     conn = None
+#     try:
+#         if not x.validate_partner_logged():
+#             return redirect("/login")
         
-        user = json.loads(request.get_cookie("session", secret=x.COOKIE_SECRET))
-        user_id = user['user_id']
+#         user = json.loads(request.get_cookie("session", secret=x.COOKIE_SECRET))
+#         user_id = user['user_id']
         
-        conn = x.get_db_connection()
-        properties = conn.execute("SELECT * FROM items WHERE item_owner_fk = ?", (user_id,)).fetchall()
-        return template("my_properties.html", properties=properties)
-    except Exception as ex:
-        ic(ex)
-        return str(ex)
-    finally:
-        if conn:
-            conn.close()
+#         conn = x.get_db_connection()
+#         properties = conn.execute("SELECT * FROM items WHERE item_owner_fk = ?", (user_id,)).fetchall()
+#         return template("my_properties.html", properties=properties)
+#     except Exception as ex:
+#         ic(ex)
+#         return str(ex)
+#     finally:
+#         if conn:
+#             conn.close()
 
 ############################# HANDLE NEXT AND PREVIOUS BUTTONS WITH MIXHTML 
 #NEXTX

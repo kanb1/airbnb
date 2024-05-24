@@ -34,13 +34,14 @@
                 <a href="/add-property">
                     <button>Add Property</button>
                 </a>
-                <a href="/my-properties">
-                    <button>My Properties</button>
-                </a>
                 <a href="/profile">
                     <button>My Profile</button>
                 </a>
                 <a href="/logout">Logout</a>
+            %elif x.validate_admin_logged():
+                <a href="/admin-users">Users</a>
+                <a href="/admin-properties">Properties</a>
+                <a href="/admin-logout">Logout</a>
             %else:
                 <a href="/signup">
                     <button>Sign Up</button>
