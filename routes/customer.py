@@ -35,7 +35,7 @@ def my_bookings():
     try:
         q = conn.execute("""
             SELECT items.*, 
-                   CASE WHEN bookings.item_id IS NOT NULL THEN 1 ELSE 0 END AS booked
+                   CASE WHEN bookings.item_id IS NOT NULL THEN 1 ELSE 0 END AS item_booked
             FROM items
             JOIN bookings ON items.item_pk = bookings.item_id
             WHERE bookings.user_id = ?
@@ -70,14 +70,14 @@ def toggle_book():
         if booking:
             # If booked, delete the booking (unbook)
             conn.execute("DELETE FROM bookings WHERE user_id = ? AND item_id = ?", (user_id, item_id))
-            conn.execute("UPDATE items SET booked = 0 WHERE item_pk = ?", (item_id,))
+            conn.execute("UPDATE items SET item_booked = 0 WHERE item_pk = ?", (item_id,))
             button_text = "Book"
         else:
             # If not booked, create a new booking with UUID
             booking_pk = str(uuid.uuid4())
             conn.execute("INSERT INTO bookings (booking_pk, user_id, item_id) VALUES (?, ?, ?)", 
                          (booking_pk, user_id, item_id))
-            conn.execute("UPDATE items SET booked = 1 WHERE item_pk = ?", (item_id,))
+            conn.execute("UPDATE items SET item_booked = 1 WHERE item_pk = ?", (item_id,))
             button_text = "Unbook"
 
         conn.commit()

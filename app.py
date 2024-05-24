@@ -74,6 +74,7 @@ def index():
         SELECT items.*, GROUP_CONCAT(items_images.image_url) as item_images
         FROM items
         LEFT JOIN items_images ON items.item_pk = items_images.item_fk
+        WHERE items.item_is_blocked = 0
         GROUP BY items.item_pk
         ORDER BY items.item_created_at DESC
         """
@@ -97,6 +98,7 @@ def index():
             conn.close()
 
 
+
 #############################
 @get("/items/page/<page_number>")
 def get_items_page(page_number):
@@ -107,6 +109,7 @@ def get_items_page(page_number):
         SELECT items.*, GROUP_CONCAT(items_images.image_url) as item_images
         FROM items
         LEFT JOIN items_images ON items.item_pk = items_images.item_fk
+        WHERE items.item_is_blocked = 0
         GROUP BY items.item_pk
         ORDER BY items.item_created_at DESC
         LIMIT ? OFFSET ?
@@ -137,7 +140,6 @@ def get_items_page(page_number):
     finally:
         if conn:
             conn.close()
-
 
 
 ##############################TEST database connection
