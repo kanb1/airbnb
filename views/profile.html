@@ -2,26 +2,32 @@
 % import x
 
 <main id="profile" class="mt-16 p-4">
-
-        <main class="flex flex-col items-center">
-            <section id="items" class="grid grid-cols-[1fr_1fr] gap-4">
-                <div class="bg-green-600 text-white p-4">
-                <h1>My profile information:</h1>
-                <p>{{user['user_name']}}</p>
-                <p>{{user['user_last_name']}}</p>
-                <p>{{user['user_email']}}</p>
+    <div class="container mx-auto max-w-4xl p-6 bg-white shadow-md rounded-lg">
+        <h1 class="text-2xl font-bold mb-6 text-center">My Profile</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Profile Information -->
+            <div class="bg-gray-100 p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold mb-4">Profile Information</h2>
+                <div class="space-y-2">
+                    <p><strong>Name:</strong> {{user['user_name']}}</p>
+                    <p><strong>Last Name:</strong> {{user['user_last_name']}}</p>
+                    <p><strong>Email:</strong> {{user['user_email']}}</p>
                 </div>
-                <form id="frm_edit_profile" mix-data="#frm_edit_profile" mix-put="/profile/edit" mix-redirect="/profile" class="flex flex-col gap-4 w-full max-w-md">
-                    <input type="text" name="user_name" value="{{user['user_name']}}" placeholder="First Name" mix-check="{{x.USER_NAME_REGEX}}" required>
-                    <input type="text" name="user_last_name" value="{{user['user_last_name']}}" placeholder="Last Name" mix-check="{{x.USER_LAST_NAME_REGEX}}" required>
-                    <input type="email" name="user_email" value="{{user['user_email']}}" placeholder="Email" mix-check="{{x.EMAIL_REGEX}}" required>
-                    <button class="bg-blue-500 text-white p-2" mix-put="/profile/edit" mix-data="#frm_edit_profile" mix-default="Save changes" mix-await="Please wait ...">Save changes</button>
+            </div>
+                <form id="frm_edit_profile" mix-data="#frm_edit_profile" mix-put="/profile/edit" mix-redirect="/profile" class="flex flex-col gap-4 w-full max-w-md bg-gray-100 p-6 rounded-lg shadow-sm">
+                    <h2 class="text-xl font-semibold mb-4">Edit Profile</h2>
+                    <input type="text" name="user_name" value="{{user['user_name']}}" placeholder="First Name" mix-check="{{x.USER_NAME_REGEX}}" required class="w-full p-2 border rounded-md">
+                    <input type="text" name="user_last_name" value="{{user['user_last_name']}}" placeholder="Last Name" mix-check="{{x.USER_LAST_NAME_REGEX}}" required class="w-full p-2 border rounded-md">
+                    <input type="email" name="user_email" value="{{user['user_email']}}" placeholder="Email" mix-check="{{x.EMAIL_REGEX}}" required class="w-full p-2 border rounded-md">
+                    <button class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600" mix-put="/profile/edit" mix-data="#frm_edit_profile" mix-default="Save changes" mix-await="Please wait ...">Save changes</button>
                 </form>
             
-                <form id="frm_delete_profile" class="flex flex-col gap-4 w-full max-w-md mt-8">
-                    <input type="password" name="password" placeholder="Enter password to delete account" required>
-                    <button type="submit" class="bg-red-500 text-white p-2" mix-post="/profile/delete" mix-default="Delete Profile" mix-await="Processing..." mix-data="#frm_delete_profile">Delete Profile</button>
-                    <div id="delete_profile_message" class="mt-4 text-red-500"></div>
+                <form id="frm_delete_profile" class="bg-red-100 p-6 rounded-lg shadow-sm mt-6">
+                    <h2 class="text-xl font-semibold mb-4 text-red-600">Delete Profile</h2>
+                    <input type="password" name="password" placeholder="Enter password to delete account" required class="w-full p-2 border rounded-md">
+                    <button type="submit" class="w-full bg-red-500 text-white p-2 rounded-md hover:bg-red-600 mt-3" mix-post="/profile/delete" mix-default="Delete Profile" mix-await="Processing..." mix-data="#frm_delete_profile">Delete Profile</button>
+                    <div id="delete_profile_message" class="mt-4 text-red-600"></div>
                 </form>
                 
             </section>

@@ -269,6 +269,8 @@ def verify(key):
             cursor.execute("UPDATE users SET user_is_verified = 1 WHERE user_verification_key = ?", (key,))
             db.commit()
             return f"Account with key {key} is verified successfully"
+            # return redirect("/verified-message")
+            
         else:
             return "Verification failed: Invalid key."
 
@@ -278,6 +280,19 @@ def verify(key):
     finally:
         if db:
             db.close()
+
+############################## 
+# @get("/verified-message")
+# def _():
+#     try:
+#         return template("account_verified_message.html")
+#     except Exception as ex:
+#         ic(ex)
+#         print(ex)
+#         return "An error occurred while loading the verification message template."
+#     finally:
+#         pass
+
 
 ############################## 
 @get("/login")

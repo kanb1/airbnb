@@ -7,15 +7,18 @@
     <title>Admin Login</title>
 </head>
 <body>
-    <h2>Admin Login</h2>
-    <form id="admin_login_form" method="post" action="/admin-login">
-        <label for="admin_email">Email:</label>
-        <input type="email" id="admin_email" name="admin_email" required>
-        <br>
-        <label for="admin_password">Password:</label>
-        <input type="password" id="admin_password" name="admin_password" required>
-        <br>
-        <button type="submit">Login</button>
-    </form>
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded shadow-md w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6 text-center">Admin Login</h2>
+            <form id="admin_login_form" method="post" action="/admin-login" class="space-y-4">
+                <label for="admin_email" class="block text-sm font-medium text-gray-700">Email:</label>
+                <input type="email" id="admin_email" name="admin_email" required class="mt-1 p-2 w-full border border-gray-300 rounded shadow-sm">
+                <label for="admin_password" class="block text-sm font-medium text-gray-700">Password:</label>
+                <input type="password" id="admin_password" name="admin_password" required class="mt-1 p-2 w-full border border-gray-300 rounded shadow-sm focus:ring focus:ring-blue-200">
+                <br>
+                <button type="submit" class="w-full py-2 px-4 bg-blue-500 text-white font-semibold rounded shadow hover:bg-blue-400">Login</button>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

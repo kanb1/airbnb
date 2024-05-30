@@ -1,8 +1,8 @@
 % include("_header.html")
-<main class="flex">
-    <div class="w-full h-full">
-        <div class="fixed w-[calc(50%-0.5rem)] h-[calc(100%-5rem)] bg-neutral-100">
-            <div id='map' class="w-full h-full"></div>
+<main class="flex flex-col lg:flex-row">
+    <div class="w-full lg:w-1/2 h-full">
+        <div class="lg:fixed lg:w-[calc(50%-0.5rem)] lg:h-[calc(100%-5rem)]">
+            <div id='map' class="w-full h-80 lg:h-full"></div>
             <script>
                 mapboxgl.accessToken = "{{mapbox_token}}";
 
@@ -41,10 +41,10 @@
             </script>
         </div>
     </div>
-    <div class="w-full pb-16 px-4">
-        <div id="items" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-10">
+    <div class="w-full lg:w-1/2 pb-16 px-4 mt-8 lg:mt-0">
+        <div id="items" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
             % for item in items:
-                <div class="item">
+                <div class="item overflow-hidden">
                     % include("_item.html", item=item)
                 </div>
             % end

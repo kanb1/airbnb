@@ -16,41 +16,60 @@
     <script src="/app.js" defer></script>
     <script src="/carousel.js" defer></script>
 </head>
-<body>
-    <main>
-        <nav>
-            <a href="/">
-                <button>All Properties</button>
-            </a>
-            %if x.validate_customer_logged():
-                <a href="/my-bookings">
-                    <button>My Bookings</button>
-                </a>
-                <a href="/profile">
-                    <button>My Profile</button>
-                </a>
-                <a href="/logout">Logout</a>
-            %elif x.validate_partner_logged():
-                <a href="/add-property">
-                    <button>Add Property</button>
-                </a>
-                <a href="/profile">
-                    <button>My Profile</button>
-                </a>
-                <a href="/logout">Logout</a>
-            %elif x.validate_admin_logged():
-                <a href="/admin-users">Users</a>
-                <a href="/admin-properties">Properties</a>
-                <a href="/admin-logout">Logout</a>
-            %else:
-                <a href="/signup">
-                    <button>Sign Up</button>
-                </a>
-                <a href="/login">
-                    <button>Log In</button>
-                </a>
-            %end
-        </nav>
-    </main>
+<body class="bg-gray-100">
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex-shrink-0">
+                    <a href="/" class="text-xl font-bold text-gray-900">All Properties</a>
+                </div>
+                <div class="hidden md:flex space-x-4">
+                    %if x.validate_customer_logged():
+                        <a href="/my-bookings" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">My Bookings</a>
+                        <a href="/profile" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">My Profile</a>
+                        <a href="/logout" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    %elif x.validate_partner_logged():
+                        <a href="/add-property" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Add Property</a>
+                        <a href="/profile" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">My Profile</a>
+                        <a href="/logout" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    %elif x.validate_admin_logged():
+                        <a href="/admin-users" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Users</a>
+                        <a href="/admin-properties" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Properties</a>
+                        <a href="/admin-logout" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Logout</a>
+                    %else:
+                        <a href="/signup" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Sign Up</a>
+                        <a href="/login" class="text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-sm font-medium">Log In</a>
+                    %end
+                </div>
+                <div class="md:hidden">
+                    <button class="text-gray-900 hover:text-blue-500 focus:outline-none">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden bg-white shadow">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                %if x.validate_customer_logged():
+                    <a href="/my-bookings" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">My Bookings</a>
+                    <a href="/profile" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">My Profile</a>
+                    <a href="/logout" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Logout</a>
+                %elif x.validate_partner_logged():
+                    <a href="/add-property" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Add Property</a>
+                    <a href="/profile" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">My Profile</a>
+                    <a href="/logout" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Logout</a>
+                %elif x.validate_admin_logged():
+                    <a href="/admin-users" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Users</a>
+                    <a href="/admin-properties" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Properties</a>
+                    <a href="/admin-logout" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Logout</a>
+                %else:
+                    <a href="/signup" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Sign Up</a>
+                    <a href="/login" class="block text-gray-900 hover:text-blue-500 px-3 py-2 rounded-md text-base font-medium">Log In</a>
+                %end
+            </div>
+        </div>
+    </header>
 </body>
 </html>

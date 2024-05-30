@@ -35,18 +35,29 @@ def my_bookings():
     try:
         q = conn.execute("""
             SELECT items.*, 
+                   GROUP_CONCAT(items_images.image_url) as item_images,
                    CASE WHEN bookings.item_id IS NOT NULL THEN 1 ELSE 0 END AS item_booked
             FROM items
             JOIN bookings ON items.item_pk = bookings.item_id
+            LEFT JOIN items_images ON items.item_pk = items_images.item_fk
             WHERE bookings.user_id = ?
+            GROUP BY items.item_pk
         """, (user_id,))
         booked_items = q.fetchall()
-        return template("my_bookings.html", items=booked_items)
+        
+        # Convert each row to a dictionary and split item_images into a list
+        booked_items_dict = [dict(item) for item in booked_items]
+        for item in booked_items_dict:
+            if item['item_images']:
+                item['item_images'] = item['item_images'].split(',')
+        
+        return template("my_bookings.html", items=booked_items_dict)
     except Exception as ex:
         return str(ex)
     finally:
         if conn:
             conn.close()
+
  
 
 ############################# BOOK/UNBOOK

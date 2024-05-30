@@ -138,50 +138,50 @@ def create_property():
 
 ############################# HANDLE NEXT AND PREVIOUS BUTTONS WITH MIXHTML 
 #NEXTX
-@post("/nextImage")
-def next_image():
-    try:
-        data = json.loads(request.forms.get("data"))
-        images = data['images']
-        current_index = data['current_index']
-        next_index = (current_index + 1) % len(images)
-        next_image_url = images[next_index]
+# @post("/nextImage")
+# def next_image():
+#     try:
+#         data = json.loads(request.forms.get("data"))
+#         images = data['images']
+#         current_index = data['current_index']
+#         next_index = (current_index + 1) % len(images)
+#         next_image_url = images[next_index]
 
-        return f"""
-        <template mix-target="#current-image-{data['item_pk']}" mix-replace>
-            <img src="/images/{next_image_url}" class="w-full h-48 aspect-square object-cover rounded-lg">
-        </template>
-        <template mix-target="[mix-data*='current_index']" mix-replace>
-            <input type="hidden" name="current_index" value="{next_index}">
-        </template>
-        """
-    except Exception as ex:
-        ic(ex)
-        return str(ex)
+#         return f"""
+#         <template mix-target="#current-image-{data['item_pk']}" mix-replace>
+#             <img src="/images/{next_image_url}" class="w-full h-48 aspect-square object-cover rounded-lg">
+#         </template>
+#         <template mix-target="[mix-data*='current_index']" mix-replace>
+#             <input type="hidden" name="current_index" value="{next_index}">
+#         </template>
+#         """
+#     except Exception as ex:
+#         ic(ex)
+#         return str(ex)
 
 
 
 #PREVIOUS
-@post("/previousImage")
-def previous_image():
-    try:
-        data = json.loads(request.forms.get("data"))
-        images = data['images']
-        current_index = data['current_index']
-        previous_index = (current_index - 1) % len(images)
-        previous_image_url = images[previous_index]
+# @post("/previousImage")
+# def previous_image():
+#     try:
+#         data = json.loads(request.forms.get("data"))
+#         images = data['images']
+#         current_index = data['current_index']
+#         previous_index = (current_index - 1) % len(images)
+#         previous_image_url = images[previous_index]
 
-        return f"""
-        <template mix-target="#current-image-{data['item_pk']}" mix-replace>
-            <img src="/images/{previous_image_url}" class="w-full h-48 aspect-square object-cover rounded-lg">
-        </template>
-        <template mix-target="[mix-data*='current_index']" mix-replace>
-            <input type="hidden" name="current_index" value="{previous_index}">
-        </template>
-        """
-    except Exception as ex:
-        ic(ex)
-        return str(ex)
+#         return f"""
+#         <template mix-target="#current-image-{data['item_pk']}" mix-replace>
+#             <img src="/images/{previous_image_url}" class="w-full h-48 aspect-square object-cover rounded-lg">
+#         </template>
+#         <template mix-target="[mix-data*='current_index']" mix-replace>
+#             <input type="hidden" name="current_index" value="{previous_index}">
+#         </template>
+#         """
+#     except Exception as ex:
+#         ic(ex)
+#         return str(ex)
 
 
 ############################# EDIT PROPERTY
