@@ -21,7 +21,7 @@ CREATE TABLE users(
 ) WITHOUT ROWID;
 
 SELECT * FROM users;
-DELETE FROM users WHERE user_pk = "admin-user-id" OR user_pk = "cdaeb161-ba5d-46fe-8f40-9105ce05046d" OR user_pk = "dce273fb-e026-4a37-bc61-d016ad073044";
+DELETE FROM users WHERE user_pk = "admin-user-id" OR user_pk = "90a4c5d5-79e4-4ea6-9a16-4e3064632240" OR user_pk = "d208f72b-8c72-41e7-b54e-4ad358873aff";
 DELETE FROM users WHERE user_pk = "admin-user-id";
 
 -- Make the admin-user already

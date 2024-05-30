@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.DEBUG)
 #     user_id = str(uuid.uuid4())
 #     created_at = int(time.time())
 
-#     conn = sqlite3.connect('airbnb.db')  # Replace with your database path
+#     conn = sqlite3.connect('airbnb.db') 
 #     cursor = conn.cursor()
     
 #     cursor.execute("""
@@ -95,10 +95,15 @@ def do_admin_login():
 
                     response.set_cookie("session", session_data_serialized, secret=x.COOKIE_SECRET, httponly=True, secure=is_cookie_https)
                     ic("Session set, redirecting...")
+                    
+                    # Den er godkendt, derefter sætter headeren til lokationen admin-dashboard
+                    response.status = 303
+                    response.set_header("Location", "/admin-dashboard")
 
                     x.no_cache()
 
-                    return template("admin_dashboard.html")
+
+                    
                 else:
                     ic("Account not verified")
                     return "Please verify your account"
@@ -120,27 +125,38 @@ def do_admin_login():
         if "db" in locals():
             db.close()
 
+
 ############################## ADMIN DASHBOARD
 @get("/admin-dashboard")
 def admin_dashboard():
     x.no_cache()
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
-    ic(user_session)  # Debugging output
-    if user_session:
-        session_data = json.loads(user_session)
-        ic(session_data)  # Debugging output
-        if session_data.get('role') == 'admin':
-            return template('admin_dashboard.html')
-        else:
-            ic("User role is not admin")
+    if user_session and json.loads(user_session).get('role') == 'admin':
+        return template('admin_dashboard.html')
     else:
-        ic("No user session found")
-    return redirect("/login")
+        # også ift no_cache, så redirecter den til denne her side, da det er /customer-dashboard der bliver kaldt under login (og admin/partner hvis det er de)
+        return redirect("/login")
+    # ic(user_session) 
+    # if user_session:
+    #     session_data = json.loads(user_session)
+    #     ic(session_data)
+    #     if session_data.get('role') == 'admin':
+    #         return template('admin_dashboard.html')
+    #     else:
+    #         ic("User role is not admin")
+    # else:
+    #     ic("No user session found")
+    # return redirect("/login")
+
+
+
+    
 
 #############################
 @get('/admin-logout')
 def admin_logout():
     try:
+        x.no_cache()
         response.delete_cookie("session", secret=x.COOKIE_SECRET)
     except Exception as ex:
         print(ex)
@@ -151,6 +167,7 @@ def admin_logout():
 ############################# View All Users
 @get("/admin-users")
 def admin_users():
+    x.no_cache()
     if not x.validate_admin_logged():
         return redirect("/admin-login")
 
@@ -163,6 +180,8 @@ def admin_users():
 ############################# View All Properties
 @get("/admin-properties")
 def admin_properties():
+    x.no_cache()
+
     if not x.validate_admin_logged():
         return redirect("/admin-login")
 
@@ -176,6 +195,7 @@ def admin_properties():
 @post("/toggle_user_block")
 def toggle_user_block():
     try:
+
         user_id = request.forms.get("user_id")
         context = request.forms.get("context", "admin_users")  # Identify the context of the request
 
@@ -217,6 +237,7 @@ def toggle_user_block():
 @post("/toggle_property_block")
 def toggle_property_block():
     try:
+
         item_id = request.forms.get("item_id")
         context = request.forms.get("context", "admin_properties")  # Identify the context of the request
 

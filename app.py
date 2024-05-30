@@ -55,7 +55,7 @@ def _():
 #############################
 @get("/images/<item_splash_image>")
 def _(item_splash_image):
-    return static_file(item_splash_image, "images")
+    return static_file(item_splash_image, root="images")
 
 #############################
 @get("/")
@@ -89,6 +89,8 @@ def index():
 
         initial_items = items_dict[:x.ITEMS_PER_PAGE]
 
+        print("Items JSON:", items_json)  # Debugging line
+
         return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token, json=json)
     except Exception as ex:
         ic(ex)
@@ -96,6 +98,8 @@ def index():
     finally:
         if conn:
             conn.close()
+
+
 
 
 
@@ -122,8 +126,8 @@ def get_items_page(page_number):
 
         items_json = json.dumps(items_dict)
 
-        html = "".join([template("_item", item=item) for item in items_dict])
-        btn_more = template("__btn_more", page_number=int(page_number) + 1) if len(items) == x.ITEMS_PER_PAGE else ""
+        html = "".join([template("_item.html", item=item) for item in items_dict])
+        btn_more = template("__btn_more.html", page_number=int(page_number) + 1) if len(items) == x.ITEMS_PER_PAGE else ""
 
         return f"""
         <template mix-target="#items" mix-bottom>
@@ -140,6 +144,8 @@ def get_items_page(page_number):
     finally:
         if conn:
             conn.close()
+
+
 
 
 ##############################TEST database connection

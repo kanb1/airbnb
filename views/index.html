@@ -19,11 +19,15 @@
                 // Function to add markers to the map
                 function addMarkers(items) {
                     items.forEach(function(item) {
-                        var popup = new mapboxgl.Popup({ offset: 25 }).setHTML(
-                            `<img src="/images/${item.item_splash_image}" style="width:100px;height:100px;"><br>
+                        var imageUrl = item.item_images && item.item_images.length > 0 ? `/images/${item.item_images[0]}` : null;
+                        var popupContent = imageUrl ? 
+                            `<img src="${imageUrl}" style="width:100px;height:100px;"><br>
                             <strong>${item.item_name}</strong><br>
-                            ${item.item_price_per_night} DKK per night`
-                        );
+                            ${item.item_price_per_night} DKK per night` :
+                            `<strong>${item.item_name}</strong><br>
+                            ${item.item_price_per_night} DKK per night`;
+
+                        var popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
 
                         new mapboxgl.Marker()
                             .setLngLat([parseFloat(item.item_lon), parseFloat(item.item_lat)])
@@ -41,11 +45,11 @@
         <div id="items" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-10">
             % for item in items:
                 <div class="item">
-                    % include("_item", item=item)
+                    % include("_item.html", item=item)
                 </div>
             % end
         </div>
-        % include("__btn_more", page_number=2)
+        % include("__btn_more.html", page_number=2)
     </div>
 </main>
 % include("_footer.html")
