@@ -99,6 +99,8 @@ def test_db_connection():
             print("No result returned from database version query.")
     except sqlite3.Error as error:
         print("SQLite error:", error)
+        response.status = 500
+        return "Database connection failed."
     finally:
         if db:
             db.close()
@@ -114,7 +116,8 @@ def validate_user_name(user_name):
     error = f"user_name {USER_NAME_MIN} to {USER_NAME_MAX} characters"
     user_name = request.forms.get("user_name", "")
     user_name = user_name.strip()
-    if not re.match(USER_NAME_REGEX, user_name): raise Exception(400, error)
+    if not re.match(USER_NAME_REGEX, user_name): 
+        raise Exception(400, error)
     return user_name
 
 
@@ -127,7 +130,8 @@ def validate_user_last_name(user_last_name):
     error = f"user_last_name {USER_LAST_NAME_MIN} to {USER_LAST_NAME_MAX} characters"
     user_last_name = request.forms.get("user_last_name", "")
     user_last_name = user_last_name.strip()
-    if not re.match(USER_LAST_NAME_REGEX, user_last_name): raise Exception(400, error)
+    if not re.match(USER_LAST_NAME_REGEX, user_last_name): 
+        raise Exception(400, error)
     return user_last_name
 
 
@@ -140,7 +144,8 @@ def validate_user_user_name(user_username):
     error = f"user_username {USER_USER_NAME_MIN} to {USER_USER_NAME_MAX} characters"
     user_username = request.forms.get("user_username", "")
     user_username = user_username.strip()
-    if not re.match(USER_USER_NAME_REGEX, user_username): raise Exception(400, error)
+    if not re.match(USER_USER_NAME_REGEX, user_username): 
+        raise Exception(400, error)
     return user_username
 
 
@@ -225,9 +230,12 @@ def send_email(to_email, from_email, subject, email_body):
         # Close SMTP server connection:
         server.quit()
 
+        response.status = 200
+        return "Email sent successfully."
     except Exception as ex:
         print(ex)
-        return "oops couldn't send email"
+        response.status = 500
+        return "Could not send email."
     finally:
         pass
 
@@ -245,7 +253,8 @@ def validate_user_logged():
 def validate_customer_logged():
     user_session = request.get_cookie("session", secret=COOKIE_SECRET)
     if not user_session:
-        print("No valid session found")  # Debug output
+        print("No valid session found")  
+        response.status = 401
         return False
     try:
         user = json.loads(user_session)
@@ -253,6 +262,7 @@ def validate_customer_logged():
         return user.get('role') == 'customer'
     except json.JSONDecodeError as e:
         print(f"Error decoding session data: {e}")
+        response.status = 500
         return False
 
 ###################################### SESSION VALIDATION FOR ROLES - PARTNER 
@@ -260,7 +270,8 @@ def validate_customer_logged():
 def validate_partner_logged():
     user_session = request.get_cookie("session", secret=COOKIE_SECRET)
     if not user_session:
-        print("No valid session found")  # Debug output
+        print("No valid session found")
+        response.status = 401
         return False
     try:
         user = json.loads(user_session)
@@ -268,6 +279,7 @@ def validate_partner_logged():
         return user.get('role') == 'partner'
     except json.JSONDecodeError as e:
         print(f"Error decoding session data: {e}")
+        response.status = 500
         return False
 
 ###################################### SESSION VALIDATION FOR ROLES - ADMIN 
@@ -275,7 +287,8 @@ def validate_partner_logged():
 def validate_admin_logged():
     user_session = request.get_cookie("session", secret=COOKIE_SECRET)
     if not user_session:
-        print("No valid session found")  # Debug output
+        print("No valid session found")
+        response.status = 401
         return False
     try:
         user = json.loads(user_session)
@@ -283,6 +296,7 @@ def validate_admin_logged():
         return user.get('role') == 'admin'
     except json.JSONDecodeError as e:
         print(f"Error decoding session data: {e}")
+        response.status = 500
         return False
 
 ###################################### VALIDATE NEWLY CREATED ITEMS
@@ -291,6 +305,7 @@ ITEM_PRICE_REGEX = r'^\d+(\.\d{1,2})?$'
 
 def validate_item_name(item_name):
     if not item_name or len(item_name) < 3:
+        response.status = 400
         raise ValueError("Invalid item name")
     return item_name
 
@@ -299,18 +314,22 @@ def validate_item_price(item_price):
     try:
         price = float(item_price)
         if price <= 0:
+            response.status = 400
             raise ValueError("Price must be positive")
         return price
     except ValueError:
+        response.status = 400
         raise ValueError("Invalid price format")
 
 
 def validate_item_images(current_images, new_images = []):
     total_images = current_images + [img.filename for img in new_images]
     if len(total_images) < 3 or len(total_images) > 6:
+        response.status = 400
         raise ValueError("You should have at least 3 images and a maximum of 6 images.")
     for image in new_images:
         if not image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+            response.status = 400
             raise ValueError("Invalid image format")
     return total_images
 
@@ -320,12 +339,14 @@ def validate_item_images(current_images, new_images = []):
 def get_current_user_id():
     user_session = request.get_cookie("session", secret=COOKIE_SECRET)
     if not user_session:
+        response.status = 401
         return None
     try:
         user = json.loads(user_session)
         return user.get('user_id')
     except json.JSONDecodeError as e:
         ic(f"Error decoding session data: {e}")
+        response.status = 500
         return None
 
 ###################################### GROUP THE IMAGES
@@ -352,6 +373,7 @@ def validate_user_is_not_blocked(user_id):
     try:
         user_status = conn.execute("SELECT user_is_blocked FROM users WHERE user_pk = ?", (user_id,)).fetchone()
         if user_status and user_status['user_is_blocked'] == 1:
+            response.status = 403
             raise Exception("User is blocked")
     finally:
         conn.close()
@@ -362,6 +384,7 @@ def validate_item_is_not_blocked(item_id):
     try:
         item_status = conn.execute("SELECT item_is_blocked FROM items WHERE item_pk = ?", (item_id,)).fetchone()
         if item_status and item_status['item_is_blocked'] == 1:
+            response.status = 403
             raise Exception("Item is blocked")
     finally:
         conn.close()

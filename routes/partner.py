@@ -26,9 +26,11 @@ logging.basicConfig(level=logging.DEBUG)
 def add_property():
     try:
         ic("Rendering add_property.html")
+        response.status = 200
         return template("add_property.html")
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return "Problems rendering add_property.html"
     finally:
         pass
@@ -41,11 +43,13 @@ def create_property():
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
             ic("No user session found, redirecting to login")
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
         if user.get('role') != 'partner':
             ic("User is not a partner, unauthorized")
+            response.status = 403
             return "Unauthorized"
 
         item_pk = str(uuid.uuid4())
@@ -71,6 +75,7 @@ def create_property():
             item_images = request.files.getall('item_images')
             x.validate_item_images(item_images)
         except ValueError as ve:
+            response.status = 400
             return f"""
             <template mix-target="#file_container" mix-replace>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -97,6 +102,8 @@ def create_property():
                    (item_pk, validated_item_name, item_lat, item_lon, item_stars, validated_item_price, item_created_at, item_updated_at, item_owner_fk))
         db.commit()
 
+        response.status = 201
+
         return """
         <template mix-redirect="/">
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -108,6 +115,8 @@ def create_property():
     except Exception as ex:
         ic("########################### create property exception:")
         ic(ex)
+        response.status = 500
+
     finally:
         if "db" in locals():
             db.close()
@@ -190,10 +199,12 @@ def edit_property(item_pk):
     try:
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
         if user.get('role') != 'partner':
+            response.status = 403
             return "Unauthorized"
 
         item_name = request.forms.get('item_name').strip()
@@ -216,6 +227,7 @@ def edit_property(item_pk):
         try:
             x.validate_item_images(current_images, new_images)
         except ValueError as ve:
+            response.status = 400
             return f"""
             <template mix-target="#file_container" mix-replace>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -245,6 +257,8 @@ def edit_property(item_pk):
         """, (validated_item_name, validated_item_price, int(time.time()), item_pk, user['user_id']))
         conn.commit()
 
+        response.status = 200
+
         return """
         <template mix-redirect="/">
             <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
@@ -255,6 +269,8 @@ def edit_property(item_pk):
         """
     except Exception as ex:
         ic(ex)
+        response.status = 500
+
     finally:
         if conn:
             conn.close()
@@ -265,20 +281,25 @@ def edit_property_dialog(item_pk):
     try:
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
         if user.get('role') != 'partner':
+            response.status = 403
             return "Unauthorized"
 
         conn = x.get_db_connection()
         item = conn.execute("SELECT * FROM items WHERE item_pk = ? AND item_owner_fk = ?", (item_pk, user['user_id'])).fetchone()
         if not item:
+            response.status = 404
             return "Item not found or unauthorized"
-
+        
+        response.status = 200
         return template("edit_property_dialog.html", item=item)
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -293,16 +314,20 @@ def delete_property(item_pk):
     try:
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
         if user.get('role') != 'partner':
+            response.status = 403
             return "Unauthorized"
 
         conn = x.get_db_connection()
         conn.execute("DELETE FROM items WHERE item_pk = ? AND item_owner_fk = ?", (item_pk, user['user_id']))
         conn.execute("DELETE FROM items_images WHERE item_fk = ?", (item_pk,))
         conn.commit()
+        
+        response.status = 200
 
         return f"""
         <template mix-redirect="/">
@@ -314,6 +339,7 @@ def delete_property(item_pk):
         """
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -326,10 +352,12 @@ def remove_image(item_pk, image_url):
     try:
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
         if user.get('role') != 'partner':
+            response.status = 403
             return "Unauthorized"
 
         conn = x.get_db_connection()
@@ -340,6 +368,8 @@ def remove_image(item_pk, image_url):
         image_path = os.path.join("images", image_url)
         if os.path.exists(image_path):
             os.remove(image_path)
+        
+        response.status = 200
 
         return f"""
         <template mix-redirect="/">
@@ -351,6 +381,7 @@ def remove_image(item_pk, image_url):
         """
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         if conn:

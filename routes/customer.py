@@ -26,6 +26,7 @@ logging.basicConfig(level=logging.DEBUG)
 def my_bookings():
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if not user_session:
+        response.status = 401
         redirect("/login")
 
     user = json.loads(user_session)
@@ -51,8 +52,10 @@ def my_bookings():
             if item['item_images']:
                 item['item_images'] = item['item_images'].split(',')
         
+        response.status = 200
         return template("my_bookings.html", items=booked_items_dict)
     except Exception as ex:
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -65,6 +68,7 @@ def my_bookings():
 def toggle_book():
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if not user_session:
+        response.status = 401
         redirect("/login")
 
     user = json.loads(user_session)
@@ -92,6 +96,8 @@ def toggle_book():
             button_text = "Unbook"
 
         conn.commit()
+        
+        response.status = 200
 
         if context == "my_bookings":
             return f"""
@@ -115,6 +121,7 @@ def toggle_book():
             </template>
             """
     except Exception as ex:
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -126,6 +133,7 @@ def toggle_book():
 def _():
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if not user_session:
+        response.status = 401
         redirect("/login")
 
     user = json.loads(user_session)
@@ -134,8 +142,10 @@ def _():
     conn = x.get_db_connection()
     try:
         user_data = conn.execute("SELECT * FROM users WHERE user_pk = ?", (user_id,)).fetchone()
+        response.status = 200
         return template("profile.html", user=user_data)
     except Exception as ex:
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -148,6 +158,7 @@ def edit_profile():
         user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
         if not user_session:
             ic("No user session found")
+            response.status = 401
             return redirect("/login")
 
         user = json.loads(user_session)
@@ -180,6 +191,7 @@ def edit_profile():
         db.commit()
         ic("Committed changes")
 
+        response.status = 200
         return f"""
         <template mix-redirect="/profile">
         </template>
@@ -187,6 +199,7 @@ def edit_profile():
 
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         if "db" in locals():
@@ -200,6 +213,7 @@ def edit_profile():
 def delete_profile():
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if not user_session:
+        response.status = 401
         redirect("/login")
 
     user = json.loads(user_session)
@@ -210,6 +224,7 @@ def delete_profile():
     try:
         user_data = conn.execute("SELECT * FROM users WHERE user_pk = ?", (user_id,)).fetchone()
         if not bcrypt.checkpw(password.encode(), user_data['user_password']):
+            response.status = 400
             return f"""
             <template mix-target="#delete_profile_message" mix-replace>
                 <p>Invalid password</p>
@@ -224,12 +239,15 @@ def delete_profile():
         x.send_email(user_data['user_email'], "your-email@example.com", "Confirm Account Deletion", 
                      template('email_confirm_deletion.html', key=deletion_verification_key))
         
+        response.status = 200
+
         return f"""
         <template mix-target="#delete_profile_message" mix-replace>
             <p>A confirmation email has been sent to your email address.</p>
         </template>
         """
     except Exception as ex:
+        response.status = 500
         return str(ex)
     finally:
         if conn:
@@ -245,6 +263,7 @@ def confirm_delete_profile(key):
         ic("User data fetched:", user_data)
         if not user_data:
             ic("Invalid verification key")
+            response.status = 400
             return """
             <template mix-target="body" mix-replace>
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -257,9 +276,12 @@ def confirm_delete_profile(key):
         # Update the user's account to set user_is_deleted to 1
         conn.execute("UPDATE users SET user_is_deleted = 1 WHERE user_pk = ?", (user_data['user_pk'],))
         conn.commit()
+        response.status = 200
+
         
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         # Render the account deleted message and include the mix-redirect template

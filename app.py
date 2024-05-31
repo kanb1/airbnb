@@ -94,7 +94,8 @@ def index():
         return template("index.html", items_json=items_json, items=initial_items, mapbox_token=credentials.mapbox_token, json=json)
     except Exception as ex:
         ic(ex)
-        print(ex)
+        response.status = 500
+        return "An error occurred while fetching items."
     finally:
         if conn:
             conn.close()
@@ -129,6 +130,8 @@ def get_items_page(page_number):
         html = "".join([template("_item.html", item=item) for item in items_dict])
         btn_more = template("__btn_more.html", page_number=int(page_number) + 1) if len(items) == x.ITEMS_PER_PAGE else ""
 
+        response.status = 200
+
         return f"""
         <template mix-target="#items" mix-bottom>
             {html}
@@ -153,9 +156,11 @@ def get_items_page(page_number):
 def test_db_connection_route():
     try:
         x.test_db_connection()
+        response.status = 200
         return "Database connection OK"
     except Exception as ex:
         logging.error("Error testing database connection", exc_info=True)
+        response.status = 500
         return f"Database connection failed: {ex.__class__.__name__} - {str(ex)}"
 
 ##############################
@@ -181,7 +186,7 @@ def do_signup():
         print("Confirmed Password:", confirmed_password)
 
         if user_password != confirmed_password:
-            response.status = 400  # Set the status code to 400
+            response.status = 400
             return "Passwords do not match."  
 
         # Validate the inputs
@@ -217,6 +222,8 @@ def do_signup():
         # Send verification email
         x.send_email(user_email, "your-email@example.com", "Verify your account", template('email_verification', key=verification_key))
 
+        response.status = 201
+
         return "Signup successful! Please check your email to verify your account."
 
     except sqlite3.IntegrityError as e:
@@ -243,6 +250,7 @@ def get_all_user_username():
         # Convert results to a list of user_pk values
         user_pk_list = [row['user_username'] for row in user_pks]
         response.content_type = 'application/json'
+        response.status = 200
         return {'user_usernames': user_pk_list}
 
     except Exception as e:
@@ -268,13 +276,17 @@ def verify(key):
             # Update the user_is_verified to 1 for the user with the given verification key
             cursor.execute("UPDATE users SET user_is_verified = 1 WHERE user_verification_key = ?", (key,))
             db.commit()
+            response.status = 200
+
             return f"Account with key {key} is verified successfully"
             # return redirect("/verified-message")
             
         else:
+            response.status = 400
             return "Verification failed: Invalid key."
 
     except Exception as ex:
+        response.status = 500
         print(ex)
 
     finally:
@@ -316,6 +328,7 @@ def _():
         if user:
             # Check if the account is marked as deleted
             if user['user_is_deleted'] == 1:
+                response.status = 403
                 return "This account has been deleted."
 
             # Check if the account is blocked
@@ -323,6 +336,7 @@ def _():
                 x.validate_user_is_not_blocked(user['user_pk'])
             except Exception as ex:
                 ic(ex)
+                response.status = 403
                 return "Your account is blocked by the admin"
 
             # No need to encode the stored hash
@@ -358,23 +372,28 @@ def _():
                     ic("Session set, redirecting...")
                     
                     x.no_cache()
+                    
+                    response.status = 200
 
                     return f"""
                     <template mix-redirect="/{user['user_role']}-dashboard">
                         </template>
                     """
                 else:
+                    response.status = 401
                     return "Please verify your account"
             else:
+                response.status = 401
                 return "Password invalid"
         else:
+            response.status = 404
             return "User is not found"
 
     except Exception as ex:
         ic("Login error:", ex)
         print(f"An error occurred: {str(ex)}")
         print(f"Exception type: {type(ex).__name__}, Exception args: {ex.args}")
-        response.status = 500  # Set HTTP status to 500 to indicate server error
+        response.status = 500
         return "Problems logging in."
         
     finally:
@@ -388,9 +407,11 @@ def customer_dashboard():
     x.no_cache()
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if user_session and json.loads(user_session).get('role') == 'customer':
+        response.status = 200
         return template('customer_dashboard.html')
     else:
         # også ift no_cache, så redirecter den til denne her side, da det er /customer-dashboard der bliver kaldt under login (og admin/partner hvis det er de)
+        response.status = 401
         return redirect("/login")
 
 ############################## ADMIN DASHBOARD
@@ -409,8 +430,10 @@ def partner_dashboard():
     x.no_cache()
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if user_session and json.loads(user_session).get('role') == 'partner':
+        response.status = 200
         return template('partner_dashboard.html')
     else:
+        response.status = 401
         return redirect("/login")
 
 ############################## LOGOUT
@@ -418,8 +441,12 @@ def partner_dashboard():
 def logout():
     try:
         response.delete_cookie("session", secret=x.COOKIE_SECRET)  # Delete the session cookie
+        response.status = 200
+
     except Exception as ex:
         print(ex)
+        response.status = 500
+
         return "Error logging out."
     finally:
         return redirect("/")
@@ -429,6 +456,7 @@ def logout():
 def _():
 
     try:
+        response.status = 200
         return f"""
             <template mix-target="#loginForm" mix-replace>
                 <form action="/reset-password-request" method="post" id="resetForm">
@@ -443,6 +471,7 @@ def _():
         """
     except Exception as ex:
         print(ex)
+        response.status = 500
         return "Can't get template"
     finally:
         pass
@@ -470,12 +499,16 @@ def handle_password_reset_request():
         try:
             # Calling the send_email function to send the reset link
             x.send_email(user['user_email'], "your-email@example.com", "Reset your password", template('reset_password_email', reset_token=f"{reset_token}"))
+            response.status = 200
+
             return "A link to reset your password has been sent to your email."
         except Exception as e:
+            response.status = 500
             print(f"Failed to send email: {e}")
             return "Failed to send reset link email."
         return "A link to reset your password has been sent to your email."
     else:
+        response.status = 404
         return "No account associated with that email."
 
 
@@ -483,7 +516,12 @@ def handle_password_reset_request():
 ############################## HANDLE PASSWORD RESET LINK
 @get('/reset-password/<token>')
 def show_reset_password_form(token):
-    return template('__frm_reset_password.html', token=token)
+    try:
+        response.status = 200
+        return template('__frm_reset_password.html', token=token)
+    except Exception as ex:
+        response.status = 500
+        return "Can't get reset password form."
 
 
 ############################## HANDLE THE PASSWORD UPDATE 
@@ -511,11 +549,13 @@ def process_reset_password(token):
             # Update the user's password in the database and clear the reset token
             cursor.execute("UPDATE users SET user_password = ?, reset_token = NULL WHERE user_pk = ?", (hashed_password, user['user_pk']))
             db.commit()
+            response.status = 200
             return "Your password has been successfully reset."
         else:
-            return "Invalid or expired reset token.", 404
+            response.status = 400
+            return "Invalid or expired reset token."
     except Exception as ex:
-        response.status = 500  # Properly setting the HTTP response code.
+        response.status = 500  
         return str(ex)  # Ensuring the exception message is converted to string if it isn't already.
     finally:
         if "db" in locals(): 

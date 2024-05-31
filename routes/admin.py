@@ -68,6 +68,7 @@ def do_admin_login():
             # Check if the account is marked as deleted
             if admin['user_is_deleted'] == 1:
                 ic("Account is deleted")
+                response.status = 403
                 return "This account has been deleted."
 
             # Fetch the stored hashed password
@@ -106,12 +107,15 @@ def do_admin_login():
                     
                 else:
                     ic("Account not verified")
+                    response.status = 403
                     return "Please verify your account"
             else:
                 ic("Invalid password")
+                response.status = 403
                 return "Invalid password"
         else:
             ic("Admin user not found")
+            response.status = 404
             return "Admin user not found"
 
     except Exception as ex:
@@ -132,8 +136,10 @@ def admin_dashboard():
     x.no_cache()
     user_session = request.get_cookie("session", secret=x.COOKIE_SECRET)
     if user_session and json.loads(user_session).get('role') == 'admin':
+        response.status = 200
         return template('admin_dashboard.html')
     else:
+        response.status = 401
         # også ift no_cache, så redirecter den til denne her side, da det er /customer-dashboard der bliver kaldt under login (og admin/partner hvis det er de)
         return redirect("/login")
     # ic(user_session) 
@@ -158,8 +164,11 @@ def admin_logout():
     try:
         x.no_cache()
         response.delete_cookie("session", secret=x.COOKIE_SECRET)
+        response.status = 200
+
     except Exception as ex:
         print(ex)
+        response.status = 500
         return "Error logging out."
     finally:
         return redirect("/")
@@ -169,12 +178,20 @@ def admin_logout():
 def admin_users():
     x.no_cache()
     if not x.validate_admin_logged():
+        response.status = 401
         return redirect("/admin-login")
 
     conn = x.get_db_connection()
-    users = conn.execute("SELECT * FROM users").fetchall()
-    conn.close()
-    return template("admin_users.html", users=users)
+    try:
+        users = conn.execute("SELECT * FROM users").fetchall()
+        response.status = 200
+        return template("admin_users.html", users=users)
+    except Exception as ex:
+        ic(ex)
+        response.status = 500
+        return str(ex)
+    finally:
+        conn.close()
 
 
 ############################# View All Properties
@@ -186,9 +203,16 @@ def admin_properties():
         return redirect("/admin-login")
 
     conn = x.get_db_connection()
-    properties = conn.execute("SELECT * FROM items").fetchall()
-    conn.close()
-    return template("admin_properties.html", properties=properties)
+    try:
+        properties = conn.execute("SELECT * FROM items").fetchall()
+        response.status = 200
+        return template("admin_properties.html", properties=properties)
+    except Exception as ex:
+        ic(ex)
+        response.status = 500
+        return str(ex)
+    finally:
+        conn.close()
 
 
 ############################# Block/Unblock User
@@ -217,6 +241,8 @@ def toggle_user_block():
         # Send notification email
         user_email = conn.execute("SELECT user_email FROM users WHERE user_pk = ?", (user_id,)).fetchone()['user_email']
         x.send_email(user_email, "your-email@example.com", email_subject, email_body)
+        
+        response.status = 200
 
         return f"""
         <template mix-redirect="/admin-users">
@@ -225,6 +251,7 @@ def toggle_user_block():
 
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
         
     finally:
@@ -245,6 +272,7 @@ def toggle_property_block():
         current_status = conn.execute("SELECT item_is_blocked FROM items WHERE item_pk = ?", (item_id,)).fetchone()
         
         if not current_status:
+            response.status = 404
             return "Property not found."
 
         if current_status['item_is_blocked'] == 1:
@@ -266,6 +294,8 @@ def toggle_property_block():
             x.send_email(user_email, "your-email@example.com", email_subject, email_body)
         except Exception as ex:
             ic("Email sending failed:", ex)
+        
+        response.status = 200
 
         return """
         <template mix-redirect="/admin-properties"></template>
@@ -273,6 +303,7 @@ def toggle_property_block():
 
     except Exception as ex:
         ic(ex)
+        response.status = 500
         return str(ex)
     finally:
         if conn:
