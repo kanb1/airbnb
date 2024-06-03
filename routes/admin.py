@@ -85,7 +85,9 @@ def do_admin_login():
 
                 if admin['user_is_verified'] == 1:
                     # Storing user ID & role in the cookie
+                    # Creates a session data dictionary with the userID and role
                     session_data = {'user_id': admin['user_pk'], 'role': admin['user_role']}
+                    # serialize the session data to a JSON string
                     session_data_serialized = json.dumps(session_data)
 
                     try:
@@ -94,6 +96,7 @@ def do_admin_login():
                     except ImportError:
                         is_cookie_https = False
 
+                    # sets a secure session cookie with the session data (cookie secret)
                     response.set_cookie("session", session_data_serialized, secret=x.COOKIE_SECRET, httponly=True, secure=is_cookie_https)
                     ic("Session set, redirecting...")
                     
@@ -220,12 +223,16 @@ def admin_properties():
 def toggle_user_block():
     try:
 
+        # Retrieves the user_id from the form data, which identifies the user whose status is being toggled.
         user_id = request.forms.get("user_id")
+        # Retrieves the context from the form data, defaulting to "admin_users" if not provided. This helps identify the context of the request.
         context = request.forms.get("context", "admin_users")  # Identify the context of the request
 
         conn = x.get_db_connection()
+        # Executes a SQL query to fetch the current blocked status of the user with the provided user_id.
         current_status = conn.execute("SELECT user_is_blocked FROM users WHERE user_pk = ?", (user_id,)).fetchone()
         
+        # Determine New Status and Notification Details:
         if current_status['user_is_blocked'] == 1:
             new_status = 0
             email_subject = "Account Unblocked"
@@ -235,10 +242,11 @@ def toggle_user_block():
             email_subject = "Account Blocked"
             email_body = "Your account has been blocked by the admin."
 
+        # Executes an SQL update statement to change the user_is_blocked status in the users table for the specified user_id.
         conn.execute("UPDATE users SET user_is_blocked = ? WHERE user_pk = ?", (new_status, user_id))
         conn.commit()
 
-        # Send notification email
+        # Send notification email. Fetches the user's email address from the database using the user_id.
         user_email = conn.execute("SELECT user_email FROM users WHERE user_pk = ?", (user_id,)).fetchone()['user_email']
         x.send_email(user_email, "your-email@example.com", email_subject, email_body)
         
@@ -269,8 +277,10 @@ def toggle_property_block():
         context = request.forms.get("context", "admin_properties")  # Identify the context of the request
 
         conn = x.get_db_connection()
+        # Executes a SQL query to fetch the current blocked status of the property with the provided item_id.
         current_status = conn.execute("SELECT item_is_blocked FROM items WHERE item_pk = ?", (item_id,)).fetchone()
         
+        # If current_status is None, it means the property with the given item_id does not exist.
         if not current_status:
             response.status = 404
             return "Property not found."
@@ -284,12 +294,16 @@ def toggle_property_block():
             email_subject = "Property Blocked"
             email_body = "Your property has been blocked by the admin."
 
+        # Executes an SQL update statement to change the item_is_blocked status in the items table for the specified item_id.
         conn.execute("UPDATE items SET item_is_blocked = ? WHERE item_pk = ?", (new_status, item_id))
         conn.commit()
 
+        # Fetches the user_id (owner of the property) from the items table using the item_id.
         user_id = conn.execute("SELECT item_owner_fk FROM items WHERE item_pk = ?", (item_id,)).fetchone()['item_owner_fk']
+        # Fetches the owner's email address from the users table using the user_id.
         user_email = conn.execute("SELECT user_email FROM users WHERE user_pk = ?", (user_id,)).fetchone()['user_email']
 
+        # sends the notification email to the property owner
         try:
             x.send_email(user_email, "your-email@example.com", email_subject, email_body)
         except Exception as ex:

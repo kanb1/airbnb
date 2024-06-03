@@ -16,36 +16,68 @@ COOKIE_SECRET = "97981c49-a651-4d36-9eb5-2b78e0c06c63"
 ITEMS_PER_PAGE = 2
 
 ###################################### NO CACHE 
+# For my webapp where I'm having user login sessions, caching sensitive information can pose security risks and lead to privacy breaches.
+# Nocache for whenever Users expect their actions to reflect immediately, and caching might show them outdated results. For example if a user is submitting a form and wants to see the update dlist immediately (add property, all properties)
+# If new properties have been added, the partner needs to see them immediately without waiting for the cache to expire. This ensures they are always aware of the latest listings.
 def no_cache():
-    # sets the HTTP header to instruct the browser to not cache the content of the response
 
-    # This entire string is considered as the value for the Cache-Control header. The commas separate different directives that apply to caching mechanisms.
-    # no-cache directs the browser to revalidate with the server before serving the page from the cache
-    # no-store tells the browser not to store any version of the response, even in the private cache.
-    # must-revalidate tells the browser that it must revalidate with the server before serving this content after it has become stale.
+    # Useful for dynamic content that changes frequently or for security purposes
+
+    # sets the HTTP header to instruct the browser to not cache the content of the response. The content will always be fresh and up to date
+    # No cache: tells the browser that it must revalidate the content with the server before using a cached copy. Even if a cached copy exists, the browser must check with the server to see if the cached version is still valid.
+    # no-store: instructs the browser and any intermediate caches to not store any part of the response at all. This is the most restrictive directive, ensuring that no copies of the response are kept.
+    # must-revalidate: This directive tells caches that they must not use stale responses and must revalidate the content with the server before serving it.
+    # Analogy: Think of this as ensuring that every time you open your webapp/or wherever this function is called, you always call the server to check if you need to fetch new data, and you never store data for future use.
     response.add_header("Cache-control", "no-cache, no-store, must-revalidate")
 
     # Pragma no-cache, This is an older header used for backward compatibility with HTTP/1.0 caches. Like Cache-Control: no-cache, it tells the browser to revalidate with the server before using a cached copy.
-
+    # It tells the browser to revalidate the content with the server before using a cached copy.
+    # If my old webapp model only understands a specific command to check with the server before using stored data. Pragma: no-cache is that command for older systems.
     response.add_header("Pragma", "no-cache")
     
     # This header sets the expiration time of the content to a date/time in the past (typically, 0 represents January 1, 1970). This tells the browser that the content is already expired and should not be cached.
     response.add_header("Expires", 0)
 
+    # Cache-Control: Prevents the browser from storing and using cached data without validation.
+    # Pragma: Ensures backward compatibility with older HTTP versions for the same purpose.
+    # Expires: Forces the browser to consider the content expired immediately, ensuring that it always fetches fresh content from the server.
+
+    # Overall Goal: These headers collectively ensure that the browser (and any intermediate caches) always fetches fresh, up-to-date content from the server and never relies on potentially outdated cached copies.
+
 ############################## dict_factory
 # Transforming query rows into dictionaries.
+# Takes two parameters, cursor and row
+# cursor: This is a cursor object that has executed a query and holds metadata about the result set.
+# row: This represents a single row of data fetched from the database.
+
 def dict_factory(cursor, row):
-    # Extracts column names, and creates a list of column names whereas col[0] gives the name of the column from the cursor.description, which is a tuple contianing dtails about each column in the result set of the query
+    #To extract the names of the columns in the result set.
+    # cursor.description is a tuple containing metadata about each column in the result set.
+    # [col[0] for col in cursor.description] creates a list comprehension that iterates over each column description tuple and extracts the first element, which is the column name.
     col_names = [col[0] for col in cursor.description]
-    # Creates a dictionary from columns and row data. Each key is a column name and each value is the corresponding value from the current row. zip() pairs each column name with its corresponding value in the row
+
+    # Creating teh dictionary
+    # To create a dictionary where each key is a column name and each value is the corresponding value from the row.
+    # zip(col_names, row) pairs each column name with its corresponding value from the row. This creates an iterable of tuples where each tuple contains a column name and its corresponding value.
+    # {key: value for key, value in zip(col_names, row)} is a dictionary comprehension that iterates over these tuples and constructs a dictionary.
+    # Analogy: If you think of a row as a line in a spreadsheet, this step pairs each cell in the row with its header, creating a dictionary where each header (column name) maps to the cell's value.
     return {key: value for key, value in zip(col_names, row)}
 
-# the dict_factory can be directly used in my sqlite connection setup have easy access to row data by column names
+    # The dict_factory function transforms a database row into a dictionary where the keys are the column names and the values are the corresponding data from the row. 
+    # This is useful for making the row data more accessible and readable when working with the result set of a query.
 
 ########################### DB connection 
 def get_db_connection():
+    # Opens a connection to the SQLite database.
+    # pathlib.Path(__file__).parent.resolve(): Gets the absolute path of the directory containing the current file (x.py).
+    # str(...) + "/airbnb.db": Constructs the full path to the airbnb.db SQLite database file.
+    # sqlite3.connect(...): Connects to the SQLite database at the specified path. The db variable holds the connection object.
     db = sqlite3.connect(str(pathlib.Path(__file__).parent.resolve())+"/airbnb.db")
+
     # Enables column access by name
+    # Sets the row_factory attribute of the database connection to dict_factory.
+    # Setting row_factory to dict_factory means that rows returned from queries will be dictionaries where the keys are column names and the values are the column values. This way it's easier to work with. Because in my "/" for example, I can access columns by their column names and retrieve the values from there instead of index-access row[column_name] instead of row[0]
+    # I use it in "/" and the pagination route in app.py:
     db.row_factory = dict_factory
     return db
 
@@ -110,6 +142,9 @@ def test_db_connection():
 # validate name
 USER_NAME_MIN = 2
 USER_NAME_MAX = 20
+# ^: This asserts the position at the start of the string.
+# .: This means it can be any character: match letters, digits, spaces, punctuation marks, and any other character except for the newline character. {2,20}: The preceding character (.) must appear at least 2 times and at most 20 times.
+# {2,20}: This is a quantifier that specifies the preceding element (in this case, any character) must occur at least 2 times and at most 20 times.
 USER_NAME_REGEX = "^.{2,20}$"
 
 def validate_user_name(user_name):
@@ -182,14 +217,15 @@ def confirm_user_password(user_password, confirmed_password):
 
 
 ###################################### DEFINE EMAIL SENDING FUNCTION
+# email_body, the body of the email which is expected to be HTML content
 def send_email(to_email, from_email, subject, email_body):
 
     try:
         # Email message setup:
 
-        # Creates a new multipart email message which can include both text and attachments
+        # MIMEmultipart() is used to create a new email message that can contain multiple parts (e.g. text and attachments)
         message = MIMEMultipart()
-        # Headers of the email = The respective parameters passed to the function
+        # Sets the "To", "From" and "Subject" headers of the email message using the respective parameters passed to the function
         message["To"] = to_email
         message["From"] = from_email
         message["Subject"] = subject
@@ -197,27 +233,29 @@ def send_email(to_email, from_email, subject, email_body):
 
         # Email body:
 
-        # MIMETEXT can be added to the message, where here it's used to add the email_body as HTML content
+        # Creates a MIMETEXT object that represents the email body as HTML content
         messageText = MIMEText(email_body, 'html')
-        # we attach the MIMEText part to the multipart message
+        # Attaches the MIMEText part to the multipart message
         message.attach(messageText)
 
 
-        # Email server authentication info:
+        # Email server authentication info
+        # load_dotenv() loads environment variables from a .env file into the enviroment
         load_dotenv()
+        # retrieve the email user and passworf from the enviroment variables
         email = os.getenv('EMAIL_USER')
         password = os.getenv('EMAIL_PASSWORD')
 
 
         # Setup SMTP server:
 
-        # Sets up the connection to the SMTP server at the adress and port 
+        # smtplib.SMTP('smtp.gmail.com', 587) creates an SMTP object that represents a connection to the SMTP server at smtp.gmail.com on port 587.
         server = smtplib.SMTP('smtp.gmail.com', 587)
-        # sendt the EHLO command to the server, which is a greeting and can also help with initiating the TLS connection
+        # sends the EHLO (Extended HELO) command to the SMTP server, which is a greeting and also helps with initiating the TLS connection.
         server.ehlo('Gmail')
-        # puts the connection to the SMTP server into TLS mode, which encrupts the rest of the session
+        # puts the connection to the SMTP server into TLS (Transport Layer Security) mode, which encrypts the rest of the session.
         server.starttls()
-        # logs in to the SMTP server with the specified credentials
+        # server.login(email, password) logs in to the SMTP server using the specified email and password.
         server.login(email, password)
 
 
@@ -256,10 +294,13 @@ def validate_customer_logged():
         print("No valid session found")  
         response.status = 401
         return False
+    # This block attempts to decode the session data from JSON format to a Python dictionary and assign it to the variable user.
     try:
         user = json.loads(user_session)
         print("Session data found:", user)  # Debug output
+        # user.get('role'): Retrieves the value associated with the key 'role' in the user dictionary.
         return user.get('role') == 'customer'
+        # This block catches exceptions that occur during JSON decoding.
     except json.JSONDecodeError as e:
         print(f"Error decoding session data: {e}")
         response.status = 500
@@ -304,15 +345,19 @@ ITEM_NAME_REGEX = r'^[a-zA-Z0-9 ]{3,50}$'
 ITEM_PRICE_REGEX = r'^\d+(\.\d{1,2})?$'
 
 def validate_item_name(item_name):
+    # is item_name empty or if the legnth is less than 3 raise exception
     if not item_name or len(item_name) < 3:
         response.status = 400
         raise ValueError("Invalid item name")
+    # if valid, return the name
     return item_name
 
 
 def validate_item_price(item_price):
     try:
+        # convert itemprice to a float
         price = float(item_price)
+        # checks if the price is positive
         if price <= 0:
             response.status = 400
             raise ValueError("Price must be positive")
@@ -321,20 +366,36 @@ def validate_item_price(item_price):
         response.status = 400
         raise ValueError("Invalid price format")
 
-
+# This function validates the images associated with an item
+# current_images: A list of filenames of the images currently associated with the item.
+# new_images: A list of new image files being uploaded, defaulting to an empty list if no new images are provided.
 def validate_item_images(current_images, new_images = []):
+    # total_images purpose: To create a complete list of all images (existing and new).
+    # combines current_images and filenames from new_images
+    # new_images is a list of new image files being uploaded
+    # [img.filename for img in new_images]: This list comprehension iterates over each image file in new_images and extracts its filename. The filename attribute represents the name of the file as provided by the client.
+    # current_images + [img.filename for img in new_images]: This concatenates the list of current image filenames with the list of new image filenames to form total_images, a combined list of all image filenames.
     total_images = current_images + [img.filename for img in new_images]
+    # checks if the number is between 3 and 6, so if the legnht of the totalimage is less or more than 6
     if len(total_images) < 3 or len(total_images) > 6:
         response.status = 400
         raise ValueError("You should have at least 3 images and a maximum of 6 images.")
+    # Validation of image formats to ensure that all new images are in acceptable formats
+    # for image in new_images: This loop iterates over each image file in the new_images list.
     for image in new_images:
+        # image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')): This checks if the filename of the image (converted to lowercase) ends with any of the allowed file extensions.
+        # lower() makes sure that the check is case-insensitive
         if not image.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
             response.status = 400
             raise ValueError("Invalid image format")
+    # returns the combined list of all image filenames, both current and new
     return total_images
 
 
 ###################################### GET CURRENT USER_ID from the session (for partner properties)
+# This function is used to retrieve the current user's unique identifier (user ID) from the session cookie. This is for more granular checks and actions that are specific ot the individueal user beyond their roles
+# This ensures that only the owner of the item (who is a partner) can see the edit and delete options for that item. This is a more specific check than just verifying the role.
+# By combining this and the role validation I can enforce both role-based and user-sepcific access controls in my application
 # Function to get the current user ID from the session
 def get_current_user_id():
     user_session = request.get_cookie("session", secret=COOKIE_SECRET)
@@ -349,13 +410,22 @@ def get_current_user_id():
         response.status = 500
         return None
 
-###################################### GROUP THE IMAGES
+###################################### GROUP THE IMAGES - NOT USED, USING GROUP CONCAT INSTEAD (TJEK KODEFORKLARING NOTER)
+
 # This function will group the images for each item and return a list of items where each item has a list of its associated images
+# Parameter: rows is a list of dictionaries where each dictionary represents a row from a database query. Each row contains information about an item and its associated image url
 def group_images(rows):
+    # We create an empty dictionary where the keys (item_pk) and the values are dictionaries containing item details and a list of image URLS
     items = {}
+    # iterate over each row in the list to extract item details and image URLs
     for row in rows:
+        # to extract the primary key of the item from the current row, the item_pk is used as a key in the items dictionary
         item_pk = row['item_pk']
+        # To check if the item with the current primary key already exists in the items dictionary.
         if item_pk not in items:
+            # If the item does not exist in the dictionary, it means this is the first time we are encountering this item, and we need to initialize its entry.
+            # it contains an empty list that will hold the image URLS associated with this item
+            # This initialization ensures that each item has a structure to store its details and associated images.
             items[item_pk] = {
                 'item_pk': item_pk,
                 'item_name': row['item_name'],
@@ -363,7 +433,14 @@ def group_images(rows):
                 'item_price_per_night': row['item_price_per_night'],
                 'item_images': []
             }
+        # Purpose: To add the image URL from the current row to the item's image list.
+        # row['image_url'] contains the URL of the image associated with the current row.
+        # items[item_pk]['item_images'] is the list of image URLs for the item with the primary key item_pk.
+        # .append(row['image_url']) adds the image URL to this list.
         items[item_pk]['item_images'].append(row['image_url'])
+    # Purpose: To return a list of item dictionaries with their associated image URLs.
+    # items.values() retrieves all the dictionaries stored in the items dictionary.
+    # list(items.values()) converts this collection of dictionaries into a list. 
     return list(items.values())
 
 ###################################### VALIDATION FUNCTIONS TO CHECK IF THE USER/PROPERTY IS BLOCKED
@@ -371,7 +448,10 @@ def group_images(rows):
 def validate_user_is_not_blocked(user_id):
     conn = get_db_connection()
     try:
+        # Fetch the user_isblocked status for the user with the given user_id
+        # fetchone() returns the first row of the query result as a dictionary. If no rows are found it returns none
         user_status = conn.execute("SELECT user_is_blocked FROM users WHERE user_pk = ?", (user_id,)).fetchone()
+        # if user_status is not noone and if the user_is_blocked field is 1, indicates user is blocked
         if user_status and user_status['user_is_blocked'] == 1:
             response.status = 403
             raise Exception("User is blocked")

@@ -22,7 +22,8 @@ CREATE TABLE users(
 
 SELECT * FROM users;
 DELETE FROM users WHERE user_pk = "admin-user-id" OR user_pk = "90a4c5d5-79e4-4ea6-9a16-4e3064632240" OR user_pk = "d208f72b-8c72-41e7-b54e-4ad358873aff";
-DELETE FROM users WHERE user_pk = "f44a796a-b4ca-40f3-957e-cbc1ce1c806a";
+DELETE FROM users WHERE user_pk = "1f4b8f74-8bac-49f8-bac6-ea0711506d14";
+UPDATE users SET user_is_deleted = 0 WHERE user_pk = "ac7e58a6-b4e0-410b-af22-1fd106bbc6a5";	
 
 -- Make the admin-user already
 INSERT INTO users (

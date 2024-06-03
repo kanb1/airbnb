@@ -6,7 +6,7 @@
             <script>
                 mapboxgl.accessToken = "{{mapbox_token}}";
 
-                // Convert items JSON to JavaScript object
+                // items_json is passed from the "/"" route ver to the template, converted into a JavaScript object, and used to add markers to the map for each item
                 var items = {{!items_json}};
 
                 var map = new mapboxgl.Map({
@@ -41,10 +41,15 @@
             </script>
         </div>
     </div>
+    <!-- The second column (lg:w-1/2) contains a grid of items. -->
+
     <div class="w-full lg:w-1/2 pb-16 px-4 mt-8 lg:mt-0">
         <div id="items" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
+            <!-- Each item in items is iterated over using a loop (% for item in items:). -->
             % for item in items:
                 <div class="item overflow-hidden">
+                    <!-- For each item, the _item.html template is included with item as a context variable (% include("_item.html", item=item)). -->
+                    <!-- This means that each individual item’s data is passed to the _item.html template for rendering. -->
                     % include("_item.html", item=item)
                 </div>
             % end

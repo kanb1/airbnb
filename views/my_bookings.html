@@ -3,6 +3,7 @@
     <h1 class="text-2xl font-bold text-white bg-green-600 p-4 mb-4">Below are all your bookings listed</h1>
     <div id="bookings" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-10">
         % for item in items:
+        <!-- each booking is wrapped in a div with an ID that includes the item's primary key (item_pk) -->
             <div id="booking_{{item['item_pk']}}" class="item bg-white rounded-lg shadow-lg overflow-hidden">
                 % if item['item_images']:
                     <img src="/images/{{item['item_images'][0]}}" class="w-full h-48 object-cover" alt="Property Image">
@@ -27,6 +28,12 @@
                         </span>
                         <span>per night</span>
                     </div>
+                    <!-- Each booking item has a form with a button to unbook it -->
+                    <!-- The hidden input field <input name="context" type="hidden" value="my_bookings"> is used to send additional information with the form submission. -->
+                    <!-- The value "my_bookings" indicates that the form submission originates from the "My Bookings" page. -->
+                    <!-- When the form is submitted (clicks unbook), the toggle_book route will receive this context information. -->
+                    <!-- The server can then tailor its response based on the context, enabling different behavior for different pages. -->
+                    <!-- The form in the my_bookings.html includes hidden inputs for item_id and context. item_id contains the ID of the item being unbooked. context is set to "my_bookings".-->
                     <div class="mt-4">
                         <form id="frm_unbook_{{item['item_pk']}}">
                             <input name="item_id" type="hidden" value="{{item['item_pk']}}">

@@ -1,19 +1,30 @@
 % import x
+<!-- this template displays indiivudla items (properties) and includes forms for booking or unbooking them -->
 <div class="item mb-4 p-4 border rounded-lg">
+
+    <!-- current_user_id is set to the result of x.get_current_user_id() to identify the currently logged-in user. -->
     % current_user_id = x.get_current_user_id()
     <div class="carousel relative">
+        <!-- Checks if item['item_images'] is not empty. -->
         % if item['item_images']:
         <div class="carousel-images">
+           <!--  it iterates over item['item_images'] and creates an img element for each one, initially hidden (hidden class). -->
             % for image_url in item['item_images']:
             <img src="/images/{{image_url}}" class="w-full h-48 aspect-square object-cover rounded-lg hidden">
             % end
+            <!-- Displays the first image in the list (item['item_images'][0]). -->
             <img src="/images/{{item['item_images'][0]}}" class="w-full h-48 aspect-square object-cover rounded-lg">
         </div>
+
+        <!-- carousel buttons that doesn't work anymore for some reason -->
         <button class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-1 rounded-full carousel-prev">‹</button>
         <button class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-800 text-white p-1 rounded-full carousel-next">›</button>
         % end
     </div>
+
+
     <div class="flex justify-between mt-2">
+        <!-- Displays the item name and rating stars. -->
         <span>
             {{item["item_name"]}}
         </span>
@@ -24,6 +35,8 @@
             {{item["item_stars"]}}
         </span>
     </div>
+
+    <!-- Displays the item price per night in Danish Krone (DKK), formatted without commas but with periods for thousands. -->
     <div>
         <span class="font-medium">
             % price = int(item["item_price_per_night"])
@@ -34,10 +47,18 @@
             nat
         </span>
     </div>
+
+
+    <!-- Displays a booking form if the current user is logged in as a customer (x.validate_customer_logged()). -->
     % if x.validate_customer_logged():
         <div>
+            <!-- here is the book/unbook form. Similar to the form in my_bookings.html, but this one is used for general item listings -->
+            <!-- The form has a hidden input field with the item ID. -->
             <form id="frm_book_{{item['item_pk']}}">
+                <!-- A hidden input field that includes the item_id as a form value. This allows the server to know which item is being booked or unbooked when the form is submitted. -->
                 <input name="item_id" type="hidden" value="{{item['item_pk']}}">
+                <!-- If the item is booked, shows an "Unbook" button; otherwise, shows a "Book" button. -->
+                <!-- The buttons use mix-post to submit the form to /toggle_book, with different labels depending on the current booking status. -->
                 % if item['item_booked']:
                     <button class="book-button"
                             mix-data="#frm_book_{{item['item_pk']}}"
@@ -58,6 +79,9 @@
             </form>
         </div>
     % end
+
+
+    <!-- Displays edit and delete forms if the current user is logged in as a partner and owns the item. -->
     % if x.validate_partner_logged() and item['item_owner_fk'] == current_user_id:
         <div class="flex flex-col gap-2 mt-2">
             <form id="form_edit_{{item['item_pk']}}" class="flex flex-col gap-2">
@@ -77,17 +101,25 @@
                     % end
                 </div>
 
-                <!-- Add new image upload fields -->
+                <!--Provides a file input for uploading new images. -->
                 <div id="file_container"><input type="file" name="new_images" accept=".png, .jpg, .jpeg, .webp" multiple class="mt-2 w-full border"></div>
-
+                <!-- The form submits to /edit_property/{{item['item_pk']}} using mix-put. -->
                 <button class="bg-green-500 text-white p-2 rounded" mix-put="/edit_property/{{item['item_pk']}}" mix-data="#form_edit_{{item['item_pk']}}" mix-default="Save changes" mix-await="Please wait ..." mix-redirect="/">Save changes</button>
             </form>
+
+            <!-- A button for deleting the property, which submits to /delete_property/{{item['item_pk']}} using mix-delete -->
             <form id="form_delete_{{item['item_pk']}}" mix-data="#form_delete_{{item['item_pk']}}" mix-delete="/delete_property/{{item['item_pk']}}" class="flex flex-col gap-2 mt-2">
                 <button class="bg-red-500 text-white p-2 rounded" mix-delete="/delete_property/{{item['item_pk']}}" mix-data="#form_delete_{{item['item_pk']}}" mix-confirm="Are you sure you want to delete this property?" mix-default="Delete Property" mix-await="Processing...">Delete Property</button>
             </form>
         </div>
     % end
 </div>
+
+
+
+
+
+<!-- Doesn't work anymore -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const carousels = document.querySelectorAll(".carousel");
